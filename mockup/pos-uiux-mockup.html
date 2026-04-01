@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>POS UI/UX Mockup</title>
+  <title>POS UI/UX Mockup - Complete Frames</title>
   <style>
     :root {
       --primary: #2F80ED;
@@ -13,7 +13,8 @@
       --entity-a: #56CCF2;
       --entity-b: #BB6BD9;
       --entity-c: #F2994A;
-      --bg: #F7F9FC;
+      --entity-d: #6FCF97;
+      --bg: #F5F7FB;
       --panel: #FFFFFF;
       --text: #1F2937;
       --muted: #6B7280;
@@ -29,53 +30,52 @@
     }
 
     .container { max-width: 1440px; margin: 0 auto; padding: 24px; }
-    .title { font-size: 28px; margin: 0 0 8px; }
-    .subtitle { color: var(--muted); margin: 0 0 24px; }
+    .title { margin: 0; font-size: 30px; }
+    .subtitle { color: var(--muted); margin: 8px 0 18px; }
+    .tokens { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .swatch { border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; background: #fff; font-size: 12px; }
 
     .frame {
-      background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 16px;
+      background: var(--panel);
       padding: 16px;
       margin-bottom: 20px;
       box-shadow: 0 4px 14px rgba(0,0,0,.05);
     }
 
-    .frame h2 { margin: 0 0 14px; font-size: 18px; }
-    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
-    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
-
-    .bar, .card, .table, .box {
+    .frame-title { margin: 0 0 12px; font-size: 18px; }
+    .bar, .box, .card, .table-wrap {
       border: 1px solid var(--border);
       border-radius: 12px;
       background: #fff;
     }
 
-    .bar { padding: 12px; color: var(--muted); }
-    .card { padding: 12px; margin-bottom: 10px; }
-    .box { padding: 12px; }
+    .bar, .box, .card { padding: 12px; }
     .muted { color: var(--muted); }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .row + .row { margin-top: 8px; }
 
-    .item-row, .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .item-row + .item-row { margin-top: 8px; }
+    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    .grid-2-even { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
 
     .badge {
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      color: #0f172a;
-      font-weight: 600;
     }
-    .a { background: var(--entity-a); }
-    .b { background: var(--entity-b); color: #fff; }
-    .c { background: var(--entity-c); }
+    .entity-a { background: var(--entity-a); }
+    .entity-b { background: var(--entity-b); color: #fff; }
+    .entity-c { background: var(--entity-c); }
+    .entity-d { background: var(--entity-d); }
 
-    .btn-row { display: flex; justify-content: space-between; margin-top: 12px; }
-    .btns { display: flex; gap: 8px; }
+    .btns { display: flex; gap: 8px; flex-wrap: wrap; }
     button {
       border: none;
       border-radius: 10px;
@@ -88,12 +88,28 @@
     .danger { background: var(--danger); color: #fff; }
     .success { background: var(--success); color: #fff; }
 
-    .table { overflow: hidden; }
+    details {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 6px;
+    }
+
+    .table-wrap { overflow: hidden; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
 
     .qr {
-      height: 170px;
+      height: 180px;
       border: 2px dashed var(--border);
       border-radius: 12px;
       display: grid;
@@ -102,102 +118,214 @@
       margin-bottom: 8px;
     }
 
-    .kpi { padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
-    .kpi b { font-size: 20px; display: block; margin-top: 4px; }
+    .kpi {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+    .kpi b { display: block; margin-top: 4px; font-size: 20px; }
 
-    @media (max-width: 1000px) {
-      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .popup {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .popup.active { display: flex; }
+    .modal {
+      width: min(480px, 92vw);
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 1024px) {
+      .grid-2, .grid-2-even, .grid-3, .grid-4 { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="title">Mockup UI/UX POS + Backoffice</h1>
-    <p class="subtitle">Visual wireframe high-fidelity ringan berbasis requirement Anda.</p>
+    <h1 class="title">Complete POS UI/UX Mockup</h1>
+    <p class="subtitle">Semua frame dari requirement Anda dibuat dalam satu halaman preview.</p>
 
-    <section class="frame">
-      <h2>[Frame] POS/Sales</h2>
+    <div class="tokens">
+      <span class="swatch">Primary #2F80ED</span>
+      <span class="swatch">Success #27AE60</span>
+      <span class="swatch">Warning #F2C94C</span>
+      <span class="swatch">Danger #EB5757</span>
+      <span class="swatch">Grid: 12 col / 24 margin / 16 gutter</span>
+    </div>
+
+    <section class="frame" id="pos-sales">
+      <h2 class="frame-title">[Frame] POS/Sales (1440x900)</h2>
       <div class="bar">🔎 Search bar</div>
       <div class="grid-2" style="margin-top:12px;">
         <div class="box">
           <div class="card">
-            <div class="item-row"><b>Es Kopi Susu</b><span class="badge a">🔥 Entity A</span></div>
-            <div class="item-row muted"><span>Qty: 2</span><span>38.000</span></div>
+            <div class="row"><b>Es Kopi Susu</b><span class="badge entity-a">🔥 Entity A</span></div>
+            <div class="row muted"><span>Qty: 2</span><span>38.000</span></div>
+            <div class="btns" style="margin-top:8px;"><button class="secondary edit-qty">Edit Qty</button></div>
           </div>
           <div class="card">
-            <div class="item-row"><b>Croissant</b><span class="badge b">🔥 Entity B</span></div>
-            <div class="item-row muted"><span>Qty: 1</span><span>24.000</span></div>
+            <div class="row"><b>Croissant</b><span class="badge entity-b">🔥 Entity B</span></div>
+            <div class="row muted"><span>Qty: 1</span><span>24.000</span></div>
+            <div class="btns" style="margin-top:8px;"><button class="secondary edit-qty">Edit Qty</button></div>
           </div>
         </div>
         <div class="box">
-          <div class="row"><span>Subtotal Entity A</span><b>38.000</b></div>
-          <div class="row"><span>Subtotal Entity B</span><b>24.000</b></div>
+          <details open>
+            <summary>Entity A</summary>
+            <div class="row"><span>Subtotal</span><b>38.000</b></div>
+          </details>
+          <details>
+            <summary>Entity B</summary>
+            <div class="row"><span>Subtotal</span><b>24.000</b></div>
+          </details>
           <div class="row"><span>Discount</span><span>-5.000</span></div>
           <div class="row"><span>Tax</span><span>5.700</span></div>
-          <hr />
-          <div class="row"><b>Grand Total</b><b>62.700</b></div>
+          <div class="row"><span>Point</span><span>-2.000</span></div>
+          <hr>
+          <div class="row"><b>GRAND TOTAL</b><b>60.700</b></div>
         </div>
       </div>
-      <div class="btn-row">
+      <div class="row" style="margin-top:12px;">
         <div class="btns"><button class="secondary">HOLD</button><button class="danger">VOID</button></div>
         <button class="primary">CHECKOUT</button>
       </div>
     </section>
 
     <section class="frame">
-      <h2>[Frame] POS/Payment</h2>
-      <div class="grid-2">
+      <h2 class="frame-title">[Frame] POS/Entity-Breakdown-Modal</h2>
+      <div class="box">
+        <div class="row"><b>Entity A</b><b>62.000</b></div>
+        <div class="muted">Es Kopi Susu x2, Donut x1</div>
+        <div class="row"><span>Discount</span><span>-5.000</span></div>
+        <div class="row"><span>Tax</span><span>5.700</span></div>
+        <hr>
+        <div class="row"><b>Entity B</b><b>24.000</b></div>
+        <div class="muted">Croissant x1</div>
+        <hr>
+        <div class="row"><b>TOTAL</b><b>86.700</b></div>
+        <div class="btns" style="margin-top:10px;"><button class="secondary">Close</button></div>
+      </div>
+    </section>
+
+    <section class="frame">
+      <h2 class="frame-title">[Frame] POS/Discount-Loyalty</h2>
+      <div class="grid-3">
         <div class="box">
-          <div class="row"><b>Total</b><b>379.500</b></div>
+          <b>APPLY DISCOUNT</b>
+          <div class="btns" style="margin-top:10px;"><button class="secondary">%</button><button class="secondary">Nominal</button></div>
+          <input value="5000" />
+        </div>
+        <div class="box">
+          <b>MEMBER</b>
+          <input placeholder="Input member ID" value="MBR-001" />
+        </div>
+        <div class="box">
+          <b>POINT REDEEM</b>
+          <div class="muted" style="margin-top:8px;">Available: 100.000</div>
+          <input value="2000" />
+        </div>
+      </div>
+      <div class="btns" style="margin-top:12px;"><button class="primary">APPLY</button></div>
+    </section>
+
+    <section class="frame">
+      <h2 class="frame-title">[Frame] POS/Payment (Critical)</h2>
+      <div class="grid-2-even">
+        <div class="box">
+          <div class="row"><b>TOTAL</b><b>379.500</b></div>
           <div class="row muted"><span>Remaining</span><span>379.500</span></div>
-          <hr />
-          <div class="btns">
+          <hr>
+          <b>PAYMENT METHODS</b>
+          <div class="btns" style="margin-top:8px;">
             <button class="secondary">CASH</button>
             <button class="secondary">CARD</button>
             <button class="primary">QRIS 🔥</button>
           </div>
         </div>
-        <div class="box">
-          <div class="muted">QR State: Generated</div>
-          <div class="qr">QR CODE</div>
-          <div class="row"><span>Exp</span><span>01:30</span></div>
-          <div class="row"><span>Status</span><b>WAITING</b></div>
+        <div class="box" id="qr-state-box">
+          <div class="row"><b>Selected Payment Detail</b><span id="qr-state-label" class="muted">Loading</span></div>
+          <div id="qr-loading">
+            <div class="qr">Generating QR...</div>
+          </div>
+          <div id="qr-generated" style="display:none;">
+            <div class="qr">QR CODE</div>
+            <div class="row"><span>Exp</span><span id="countdown">01:30</span></div>
+            <div class="row"><span>Status</span><b>WAITING</b></div>
+          </div>
+          <div id="qr-paid" style="display:none;">
+            <div class="qr" style="border-color: var(--success); color: var(--success);">PAID ✅</div>
+            <div class="btns"><button class="success">Complete Transaction</button></div>
+          </div>
+          <div class="btns" style="margin-top:8px;">
+            <button class="secondary" id="state1">State 1</button>
+            <button class="secondary" id="state2">State 2</button>
+            <button class="secondary" id="state3">State 3</button>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="frame">
-      <h2>[Frame] POS/Receipt-Preview</h2>
+      <h2 class="frame-title">[Frame] POS/Receipt-Preview</h2>
       <div class="box">
         <b>STORE NAME</b>
-        <hr />
-        <p><b>Entity A</b><br><span class="muted">Es Kopi Susu x2</span></p>
-        <p><b>Entity B</b><br><span class="muted">Croissant x1</span></p>
-        <hr />
-        <div class="row"><span>Total</span><b>62.700</b></div>
-        <div class="row"><span>Tax</span><span>5.700</span></div>
-        <div class="row"><span>Payment</span><span>QRIS</span></div>
+        <hr>
+        <p><b>Entity A</b><br><span class="muted">Es Kopi Susu x2 — 38.000</span></p>
+        <p><b>Entity B</b><br><span class="muted">Croissant x1 — 24.000</span></p>
+        <hr>
+        <div class="row"><span>TOTAL</span><b>62.000</b></div>
+        <div class="row"><span>DISCOUNT</span><span>-5.000</span></div>
+        <div class="row"><span>POINT</span><span>-2.000</span></div>
+        <div class="row"><span>TAX</span><span>5.700</span></div>
+        <hr>
+        <div class="row"><span>PAYMENT METHOD</span><b>QRIS</b></div>
         <div class="btns" style="margin-top:10px;"><button class="secondary">PRINT</button><button class="secondary">CLOSE</button></div>
       </div>
     </section>
 
     <section class="frame">
-      <h2>[Frame] Backoffice/Settlement</h2>
+      <h2 class="frame-title">[Frame] POS/Cashier-Session</h2>
+      <div class="box">
+        <div class="row"><span>Opening Cash</span><b>1.000.000</b></div>
+        <hr>
+        <div class="row"><span>Sales Today</span><b>5.000.000</b></div>
+        <div class="row"><span>Cash</span><span>2.000.000</span></div>
+        <div class="row"><span>QR</span><span>3.000.000</span></div>
+        <hr>
+        <div class="row"><span>Expected</span><b>2.000.000</b></div>
+        <div class="row"><span>Actual Input</span><input style="max-width:180px;margin:0;" value="2000000"></div>
+        <div class="row"><span>Variance</span><b>0</b></div>
+        <div class="btns" style="margin-top:8px;"><button class="danger">Close Shift</button></div>
+      </div>
+    </section>
+
+    <section class="frame">
+      <h2 class="frame-title">[Frame] Backoffice/Settlement (1440x1024)</h2>
       <div class="bar">Date Filter</div>
-      <div class="table" style="margin-top:12px;">
+      <div class="table-wrap" style="margin-top:12px;">
         <table>
-          <thead><tr><th>TRX ID</th><th>METHOD</th><th>AMOUNT</th><th>STATUS</th><th>MATCH</th></tr></thead>
+          <thead>
+            <tr><th>TRX ID</th><th>METHOD</th><th>AMOUNT</th><th>STATUS</th><th>MATCH</th></tr>
+          </thead>
           <tbody>
             <tr><td>123</td><td>QRIS</td><td>100K</td><td style="color:var(--success)">PAID</td><td>✔</td></tr>
             <tr><td>124</td><td>CARD</td><td>200K</td><td style="color:#a16207">PENDING</td><td>!</td></tr>
           </tbody>
         </table>
       </div>
-      <div style="margin-top:10px;"><button class="primary">RECONCILE</button></div>
+      <div class="btns" style="margin-top:10px;"><button class="primary">RECONCILE</button></div>
     </section>
 
     <section class="frame">
-      <h2>[Frame] Backoffice/Dashboard</h2>
+      <h2 class="frame-title">[Frame] Backoffice/Dashboard (1440x1024)</h2>
       <div class="grid-4">
         <div class="kpi">Sales Today<b>5.000.000</b></div>
         <div class="kpi">Cash<b>2.000.000</b></div>
@@ -211,5 +339,56 @@
       </div>
     </section>
   </div>
+
+  <div class="popup" id="qty-popup">
+    <div class="modal">
+      <h3 style="margin-top:0;">Edit Qty</h3>
+      <div class="btns"><button class="secondary">-</button><b>2</b><button class="secondary">+</button></div>
+      <div class="btns" style="margin-top:10px;"><button class="primary" id="close-popup">Save</button></div>
+    </div>
+  </div>
+
+  <script>
+    const popup = document.getElementById('qty-popup');
+    document.querySelectorAll('.edit-qty').forEach(btn => {
+      btn.addEventListener('click', () => popup.classList.add('active'));
+    });
+    document.getElementById('close-popup').addEventListener('click', () => {
+      popup.classList.remove('active');
+    });
+    popup.addEventListener('click', (e) => {
+      if (e.target === popup) popup.classList.remove('active');
+    });
+
+    const q1 = document.getElementById('qr-loading');
+    const q2 = document.getElementById('qr-generated');
+    const q3 = document.getElementById('qr-paid');
+    const label = document.getElementById('qr-state-label');
+    const countdown = document.getElementById('countdown');
+
+    function setState(s) {
+      q1.style.display = s === 1 ? 'block' : 'none';
+      q2.style.display = s === 2 ? 'block' : 'none';
+      q3.style.display = s === 3 ? 'block' : 'none';
+      label.textContent = s === 1 ? 'Loading' : s === 2 ? 'Generated' : 'Paid';
+    }
+
+    document.getElementById('state1').addEventListener('click', () => setState(1));
+    document.getElementById('state2').addEventListener('click', () => setState(2));
+    document.getElementById('state3').addEventListener('click', () => setState(3));
+
+    let sec = 90;
+    setInterval(() => {
+      if (sec <= 0) return;
+      sec -= 1;
+      const m = String(Math.floor(sec / 60)).padStart(2, '0');
+      const s = String(sec % 60).padStart(2, '0');
+      countdown.textContent = `${m}:${s}`;
+    }, 1000);
+
+    // simple flow demo
+    setTimeout(() => setState(2), 1200);
+    setTimeout(() => setState(3), 4200);
+  </script>
 </body>
 </html>

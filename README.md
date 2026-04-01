@@ -12,5 +12,5 @@
 
 ## Quick preview
 
-Open `mockup/pos-uiux-mockup.html` di browser untuk melihat mockup UI/UX statis.
+Open `mockup/pos-uiux-mockup.html` di browser untuk melihat mockup UI/UX statis lengkap (semua frame + interaksi dasar).
 

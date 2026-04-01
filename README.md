@@ -9,3 +9,8 @@
   <a href="https://aistudio.google.com/apps">Start building</a>
 
 </div>
+
+## Quick preview
+
+Open `mockup/pos-uiux-mockup.html` di browser untuk melihat mockup UI/UX statis.
+

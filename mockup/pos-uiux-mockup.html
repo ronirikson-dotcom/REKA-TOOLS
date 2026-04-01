@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POS UI/UX Mockup</title>
+  <style>
+    :root {
+      --primary: #2F80ED;
+      --success: #27AE60;
+      --warning: #F2C94C;
+      --danger: #EB5757;
+      --entity-a: #56CCF2;
+      --entity-b: #BB6BD9;
+      --entity-c: #F2994A;
+      --bg: #F7F9FC;
+      --panel: #FFFFFF;
+      --text: #1F2937;
+      --muted: #6B7280;
+      --border: #E5E7EB;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    .title { font-size: 28px; margin: 0 0 8px; }
+    .subtitle { color: var(--muted); margin: 0 0 24px; }
+
+    .frame {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.05);
+    }
+
+    .frame h2 { margin: 0 0 14px; font-size: 18px; }
+    .grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+
+    .bar, .card, .table, .box {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+    }
+
+    .bar { padding: 12px; color: var(--muted); }
+    .card { padding: 12px; margin-bottom: 10px; }
+    .box { padding: 12px; }
+    .muted { color: var(--muted); }
+
+    .item-row, .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .item-row + .item-row { margin-top: 8px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    .a { background: var(--entity-a); }
+    .b { background: var(--entity-b); color: #fff; }
+    .c { background: var(--entity-c); }
+
+    .btn-row { display: flex; justify-content: space-between; margin-top: 12px; }
+    .btns { display: flex; gap: 8px; }
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .primary { background: var(--primary); color: #fff; }
+    .secondary { background: #E5E7EB; color: #111827; }
+    .danger { background: var(--danger); color: #fff; }
+    .success { background: var(--success); color: #fff; }
+
+    .table { overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+
+    .qr {
+      height: 170px;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .kpi { padding: 12px; border-radius: 12px; border: 1px solid var(--border); }
+    .kpi b { font-size: 20px; display: block; margin-top: 4px; }
+
+    @media (max-width: 1000px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Mockup UI/UX POS + Backoffice</h1>
+    <p class="subtitle">Visual wireframe high-fidelity ringan berbasis requirement Anda.</p>
+
+    <section class="frame">
+      <h2>[Frame] POS/Sales</h2>
+      <div class="bar">🔎 Search bar</div>
+      <div class="grid-2" style="margin-top:12px;">
+        <div class="box">
+          <div class="card">
+            <div class="item-row"><b>Es Kopi Susu</b><span class="badge a">🔥 Entity A</span></div>
+            <div class="item-row muted"><span>Qty: 2</span><span>38.000</span></div>
+          </div>
+          <div class="card">
+            <div class="item-row"><b>Croissant</b><span class="badge b">🔥 Entity B</span></div>
+            <div class="item-row muted"><span>Qty: 1</span><span>24.000</span></div>
+          </div>
+        </div>
+        <div class="box">
+          <div class="row"><span>Subtotal Entity A</span><b>38.000</b></div>
+          <div class="row"><span>Subtotal Entity B</span><b>24.000</b></div>
+          <div class="row"><span>Discount</span><span>-5.000</span></div>
+          <div class="row"><span>Tax</span><span>5.700</span></div>
+          <hr />
+          <div class="row"><b>Grand Total</b><b>62.700</b></div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <div class="btns"><button class="secondary">HOLD</button><button class="danger">VOID</button></div>
+        <button class="primary">CHECKOUT</button>
+      </div>
+    </section>
+
+    <section class="frame">
+      <h2>[Frame] POS/Payment</h2>
+      <div class="grid-2">
+        <div class="box">
+          <div class="row"><b>Total</b><b>379.500</b></div>
+          <div class="row muted"><span>Remaining</span><span>379.500</span></div>
+          <hr />
+          <div class="btns">
+            <button class="secondary">CASH</button>
+            <button class="secondary">CARD</button>
+            <button class="primary">QRIS 🔥</button>
+          </div>
+        </div>
+        <div class="box">
+          <div class="muted">QR State: Generated</div>
+          <div class="qr">QR CODE</div>
+          <div class="row"><span>Exp</span><span>01:30</span></div>
+          <div class="row"><span>Status</span><b>WAITING</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="frame">
+      <h2>[Frame] POS/Receipt-Preview</h2>
+      <div class="box">
+        <b>STORE NAME</b>
+        <hr />
+        <p><b>Entity A</b><br><span class="muted">Es Kopi Susu x2</span></p>
+        <p><b>Entity B</b><br><span class="muted">Croissant x1</span></p>
+        <hr />
+        <div class="row"><span>Total</span><b>62.700</b></div>
+        <div class="row"><span>Tax</span><span>5.700</span></div>
+        <div class="row"><span>Payment</span><span>QRIS</span></div>
+        <div class="btns" style="margin-top:10px;"><button class="secondary">PRINT</button><button class="secondary">CLOSE</button></div>
+      </div>
+    </section>
+
+    <section class="frame">
+      <h2>[Frame] Backoffice/Settlement</h2>
+      <div class="bar">Date Filter</div>
+      <div class="table" style="margin-top:12px;">
+        <table>
+          <thead><tr><th>TRX ID</th><th>METHOD</th><th>AMOUNT</th><th>STATUS</th><th>MATCH</th></tr></thead>
+          <tbody>
+            <tr><td>123</td><td>QRIS</td><td>100K</td><td style="color:var(--success)">PAID</td><td>✔</td></tr>
+            <tr><td>124</td><td>CARD</td><td>200K</td><td style="color:#a16207">PENDING</td><td>!</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px;"><button class="primary">RECONCILE</button></div>
+    </section>
+
+    <section class="frame">
+      <h2>[Frame] Backoffice/Dashboard</h2>
+      <div class="grid-4">
+        <div class="kpi">Sales Today<b>5.000.000</b></div>
+        <div class="kpi">Cash<b>2.000.000</b></div>
+        <div class="kpi">QR<b>3.000.000</b></div>
+        <div class="kpi">Card<b>700.000</b></div>
+      </div>
+      <div class="grid-3" style="margin-top:12px;">
+        <div class="box">Sales by Entity (chart)</div>
+        <div class="box">Top Items</div>
+        <div class="box">Outstanding Vendor Payable</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { PageHeader, StatusBadge } from "@/components/page-header";
 import { EPOCH, canWrite, closingDebit, getAccounts, getActivity, getSession } from "@/lib/data";
 import { fmtDate, money, periodLabel, sourceLabel, todayISO } from "@/lib/format";
@@ -8,6 +9,7 @@ export default async function DashboardPage() {
   const today = todayISO();
   const monthStart = `${today.slice(0, 7)}-01`;
   const { supabase, profile, role } = await getSession();
+  if (role === "cashier") redirect("/pos");
   const [accounts, allTime, month, { data: recent }, { count: drafts }, { data: periods }] = await Promise.all([
     getAccounts(),
     getActivity(EPOCH, today),

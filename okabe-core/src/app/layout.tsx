@@ -3,7 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "OKABE CORE", template: "%s · OKABE CORE" },
-  description: "OKABE CORE — Core Accounting Engine",
+  description: "OKABE CORE — Core Accounting Engine & Smart POS",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

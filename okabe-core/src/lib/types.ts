@@ -2,13 +2,14 @@ export type AccountType = "asset" | "liability" | "equity" | "revenue" | "expens
 export type CashFlowCategory = "operating" | "investing" | "financing";
 export type JournalStatus = "draft" | "posted";
 export type PeriodStatus = "open" | "closed";
-export type AppRole = "admin" | "accountant" | "viewer";
+export type AppRole = "admin" | "accountant" | "viewer" | "manager" | "cashier";
 
 export interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
   role: AppRole;
+  phone: string | null;
   created_at: string;
 }
 

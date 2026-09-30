@@ -125,3 +125,63 @@ begin
   select v_id, 2, id, 0, 1750000 from public.accounts where code = '1120';
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Smart POS: akun tambahan, produk (stok awal = saldo Persediaan di buku besar), promo, pelanggan
+-- ---------------------------------------------------------------------------
+insert into public.accounts (code, name, type, parent_id, description)
+select v.code, v.name, v.type::public.account_type, p.id, v.descr
+from (values
+  ('4150', 'Diskon & Retur Penjualan', 'revenue', '4000', 'Kontra pendapatan (saldo normal debit): diskon promo, diskon manual, retur POS'),
+  ('6910', 'Selisih Kas', 'expense', '6000', 'Selisih kas kasir saat tutup shift')
+) as v(code, name, type, parent, descr)
+join public.accounts p on p.code = v.parent
+on conflict (code) do nothing;
+
+select set_config('okabe.system', 'on', false);
+
+insert into public.products (sku, barcode, name, category, unit, price, avg_cost, stock_qty) values
+  ('KOP-001', '8990001000011', 'Kopi Susu Gula Aren', 'Minuman', 'cup', 22000, 8000, 120),
+  ('KOP-002', '8990001000028', 'Americano', 'Minuman', 'cup', 18000, 6000, 100),
+  ('KOP-003', '8990001000035', 'Cafe Latte', 'Minuman', 'cup', 25000, 9000, 80),
+  ('TEH-001', '8990001000042', 'Es Teh Lemon', 'Minuman', 'cup', 15000, 4000, 100),
+  ('AIR-001', '8990001000059', 'Air Mineral 600ml', 'Minuman', 'btl', 6000, 2500, 120),
+  ('MKN-001', '8990001000066', 'Croissant Butter', 'Makanan', 'pcs', 20000, 9000, 60),
+  ('MKN-002', '8990001000073', 'Roti Bakar Coklat Keju', 'Makanan', 'porsi', 24000, 10000, 50),
+  ('MKN-003', '8990001000080', 'Donat Gula', 'Makanan', 'pcs', 8000, 3000, 100),
+  ('RTL-001', '8990001000097', 'Biji Kopi Arabika 250g', 'Retail', 'pak', 95000, 60000, 20),
+  ('RTL-002', '8990001000103', 'Tumbler OKABE', 'Retail', 'pcs', 120000, 58000, 10);
+
+insert into public.stock_movements (product_id, moved_at, qty, unit_cost, balance_qty, ref_type, ref_no, note)
+select id, timestamptz '2026-08-31 23:00+07', stock_qty, avg_cost, stock_qty, 'opening', 'SALDO-AWAL',
+       'Saldo awal stok (sesuai saldo akun Persediaan)'
+from public.products;
+
+select set_config('okabe.system', '', false);
+
+insert into public.promotions (name, type, priority, rules)
+select 'Beli 2 Gratis 1 Donat', 'buy_x_get_y', 10,
+       jsonb_build_object('product_ids', jsonb_build_array(id), 'buy_qty', 2, 'free_qty', 1)
+from public.products where sku = 'MKN-003';
+
+insert into public.promotions (name, type, priority, rules)
+select 'Paket Hemat Kopi Aren + Croissant', 'bundle', 20,
+       jsonb_build_object('price', 36000, 'items', jsonb_build_array(
+         jsonb_build_object('product_id', (select id from public.products where sku = 'KOP-001'), 'qty', 1),
+         jsonb_build_object('product_id', (select id from public.products where sku = 'MKN-001'), 'qty', 1)));
+
+insert into public.promotions (name, type, priority, rules) values
+  ('Happy Hour Minuman 14.00–17.00', 'happy_hour', 30,
+   '{"days": [1, 2, 3, 4, 5], "start": "14:00", "end": "17:00", "discount_pct": 20, "categories": ["Minuman"]}');
+
+insert into public.promotions (name, type, priority, rules)
+select 'Diskon Grosir Air Mineral', 'volume_tier', 40,
+       jsonb_build_object('product_ids', jsonb_build_array(id), 'tiers', jsonb_build_array(
+         jsonb_build_object('min_qty', 12, 'discount_pct', 10),
+         jsonb_build_object('min_qty', 24, 'discount_pct', 15)))
+from public.products where sku = 'AIR-001';
+
+insert into public.customers (phone, name, email, tier, notes) values
+  ('081234567001', 'Budi Santoso', 'budi@example.com', 'gold', 'Suka kopi aren less sugar'),
+  ('081234567002', 'Siti Rahma', null, 'regular', null),
+  ('081234567003', 'CV Maju Jaya', 'admin@majujaya.example', 'corporate', 'Pesanan kantor');

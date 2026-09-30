@@ -56,7 +56,9 @@ export const CASH_FLOW_LABEL: Record<CashFlowCategory, string> = {
 
 export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
+  manager: "Manajer",
   accountant: "Akuntan",
+  cashier: "Kasir",
   viewer: "Viewer",
 };
 
@@ -70,6 +72,9 @@ export const SOURCE_LABEL: Record<string, string> = {
   sales_invoice: "Sales Invoice",
   asset_depreciation: "Penyusutan Aset",
   asset_maintenance: "Pemeliharaan Aset",
+  pos_return: "Retur POS",
+  pos_shift: "Selisih Kas Shift",
+  stock_receipt: "Penerimaan Stok",
 };
 
 export function sourceLabel(source: string) {
@@ -92,3 +97,10 @@ export function monthRange(year: number, month: number) {
   const to = `${year}-${String(month).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
   return { from, to };
 }
+
+export const METHOD_LABEL: Record<string, string> = {
+  cash: "Tunai",
+  card: "Kartu",
+  qris: "QRIS",
+  transfer: "Transfer",
+};

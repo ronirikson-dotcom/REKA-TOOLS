@@ -14,8 +14,24 @@ export const getSession = cache(async () => {
   return { supabase, user, profile, role: (profile?.role ?? "viewer") as AppRole };
 });
 
+/** Boleh membuat jurnal & mengelola CoA. */
 export function canWrite(role: AppRole) {
   return role === "admin" || role === "accountant";
+}
+
+/** Boleh mengelola master POS (produk, promo, penerimaan stok). */
+export function canManagePos(role: AppRole) {
+  return role === "admin" || role === "manager";
+}
+
+/** Boleh bertransaksi di kasir. */
+export function canSell(role: AppRole) {
+  return role === "admin" || role === "manager" || role === "cashier";
+}
+
+/** Boleh melihat modul akuntansi. */
+export function canSeeAccounting(role: AppRole) {
+  return role !== "cashier";
 }
 
 export async function getAccounts() {

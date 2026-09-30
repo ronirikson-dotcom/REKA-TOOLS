@@ -1,0 +1,9 @@
+{
+  "name": "OKABE POS",
+  "short_name": "OKABE POS",
+  "start_url": "/pos",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#1d4ed8",
+  "icons": []
+}

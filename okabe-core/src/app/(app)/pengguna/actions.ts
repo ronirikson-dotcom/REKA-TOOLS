@@ -10,3 +10,10 @@ export async function setRole(userId: string, role: AppRole) {
   if (error) return { error: error.message };
   revalidatePath("/pengguna");
 }
+
+export async function setPhone(userId: string, phone?: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_profile_contact", { p_user_id: userId, p_phone: phone ?? "" });
+  if (error) return { error: error.message };
+  revalidatePath("/pengguna");
+}

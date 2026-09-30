@@ -17,6 +17,13 @@ const ACTION_LABEL: Record<string, string> = {
   REVERSE_JOURNAL: "Jurnal pembalik",
   AUTO_JOURNAL: "Jurnal otomatis",
   CLOSE_PERIOD: "Tutup buku",
+  REQUEST_OTP: "Minta OTP",
+  VERIFY_OTP: "OTP disetujui",
+  VOID_SALE: "Void penjualan",
+  RETURN_SALE: "Retur penjualan",
+  CLOSE_SHIFT: "Tutup shift",
+  RECEIVE_STOCK: "Terima stok",
+  SET_SECRET: "Ubah provider OTP",
   REOPEN_PERIOD: "Buka kembali periode",
 };
 const TABLE_LABEL: Record<string, string> = {
@@ -25,6 +32,14 @@ const TABLE_LABEL: Record<string, string> = {
   accounts: "Akun",
   fiscal_periods: "Periode",
   profiles: "Pengguna",
+  products: "Produk",
+  customers: "Pelanggan",
+  promotions: "Promo",
+  pos_sales: "Penjualan POS",
+  pos_returns: "Retur POS",
+  pos_shifts: "Shift kasir",
+  otp_requests: "OTP",
+  app_settings: "Pengaturan",
 };
 
 function summarize(log: AuditLog) {
@@ -35,6 +50,12 @@ function summarize(log: AuditLog) {
   if (log.table_name === "accounts") return `${d.code ?? ""} ${d.name ?? ""}`;
   if (log.table_name === "fiscal_periods") return `${d.month}/${d.year} → ${d.status}`;
   if (log.table_name === "profiles") return `${d.email ?? ""} → ${d.role ?? ""}`;
+  if (log.table_name === "pos_sales") return `${d.sale_no ?? ""} total ${d.total ?? ""} (${d.status ?? ""})`;
+  if (log.table_name === "products") return `${d.sku ?? ""} ${d.name ?? ""} · harga ${d.price ?? ""}`;
+  if (log.table_name === "customers") return `${d.name ?? ""} ${d.phone ?? ""}`;
+  if (log.table_name === "promotions") return `${d.name ?? ""} (${d.type ?? ""})`;
+  if (log.table_name === "pos_shifts") return `${d.shift_no ?? ""} (${d.status ?? ""})`;
+  if (log.table_name === "otp_requests") return `${d.action ?? ""} via ${d.channel ?? ""}`;
   return "";
 }
 
@@ -48,7 +69,7 @@ function changedFields(log: AuditLog) {
 export default async function AuditPage({ searchParams }: PageProps<"/audit">) {
   const sp = await searchParams;
   const { supabase, role } = await getSession();
-  if (role === "viewer") redirect("/");
+  if (role === "viewer" || role === "cashier") redirect("/");
   const page = Math.max(1, Number(sp.page) || 1);
   const record = typeof sp.record === "string" ? sp.record : "";
   const onlyEvents = sp.events === "1";

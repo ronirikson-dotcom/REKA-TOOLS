@@ -47,7 +47,7 @@ export function IssueForm({ action, requestId, items }: { action: FormAction; re
                       value={qty[i.id] ?? 0}
                       disabled={remaining <= 0}
                       onChange={(e) => setQty((x) => ({ ...x, [i.id]: Number(e.target.value) }))}
-                      className="text-right"
+                      className="min-w-[5.5rem] px-2 text-right"
                     />
                   </td>
                 </tr>

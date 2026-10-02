@@ -331,3 +331,23 @@ describe("Retur part", () => {
     expect(full!.items.find((i) => i.itemId === busi.id)!.qty).toBe(3);
   });
 });
+
+describe("Laporan sesuai scope (AC-007)", () => {
+  it("laporan difilter tanggal & cabang sesuai permission", async () => {
+    const { runReport } = await import("@/server/services/reports");
+    const { addDaysISO, todayISO } = await import("@/lib/utils");
+    const range = { from: addDaysISO(todayISO(), -30), to: todayISO() };
+    const admin = await as("superadmin");
+    const jkt = await runReport(admin, "sales-daily", range);
+    expect(jkt.rows.length).toBeGreaterThan(0);
+    // Manager Bandung tidak melihat penjualan Jakarta, meskipun meminta branchId Jakarta
+    const mgrBdg = await as("manager.bdg", "BDG");
+    const bdg = await runReport(mgrBdg, "sales-daily", { ...range, branchId: admin.activeBranchId });
+    expect(bdg.rows.length).toBe(0);
+    // Mekanik tidak memiliki permission laporan
+    await expect(runReport(await as("mekanik1.jkt"), "sales-daily", range)).rejects.toThrow(/report.sales.view/);
+    // Rentang tanggal di masa depan tidak mengembalikan data
+    const future = await runReport(admin, "sales-daily", { from: addDaysISO(todayISO(), 10), to: addDaysISO(todayISO(), 20) });
+    expect(future.rows.length).toBe(0);
+  });
+});

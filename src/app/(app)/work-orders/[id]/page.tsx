@@ -129,7 +129,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                   const assigned = j.mechanics.find((m) => m.isActive);
                   return (
                     <tr key={j.id}>
-                      <Td>
+                      <Td className="min-w-40">
                         <div className="font-medium">{j.description}</div>
                         {j.reworkCount > 0 && <Badge tone="red">Rework ×{j.reworkCount}</Badge>}
                         {j.notes && <div className="mt-1 text-xs text-slate-500">📝 {j.notes}</div>}
@@ -139,7 +139,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                           <ActionForm action={assignMechanicAction} className="flex gap-1" showSuccess={false}>
                             <input type="hidden" name="woId" value={wo.id} />
                             <input type="hidden" name="jobId" value={j.id} />
-                            <Select name="mechanicId" defaultValue={assigned?.mechanicId ?? ""} className="min-w-36 py-1 text-xs">
+                            <Select name="mechanicId" defaultValue={assigned?.mechanicId ?? ""} className="w-32 py-1 text-xs">
                               <option value="">- pilih -</option>
                               {mechanics.map((m) => (
                                 <option key={m.id} value={m.id}>
@@ -178,7 +178,7 @@ export default async function WorkOrderDetailPage({ params }: { params: Promise<
                           </details>
                         )}
                       </Td>
-                      <Td right>{jobActive && can("job.execute") && (isAssigned(j) || can("workorder.assign")) && assigned && <JobButtons action={jobActionAction} jobId={j.id} status={j.status} />}</Td>
+                      <Td right className="whitespace-nowrap">{jobActive && can("job.execute") && (isAssigned(j) || can("workorder.assign")) && assigned && <JobButtons action={jobActionAction} jobId={j.id} status={j.status} />}</Td>
                     </tr>
                   );
                 })}

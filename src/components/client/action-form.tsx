@@ -1,11 +1,21 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, type ReactNode } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { Alert, buttonClass, cn, Textarea } from "@/components/ui";
+import { toast } from "./toaster";
 
 export type ActionState = { ok: boolean; message?: string; error?: string; data?: Record<string, unknown> } | null;
 export type FormAction = (prev: ActionState, fd: FormData) => Promise<ActionState>;
+
+/** Bungkus server action agar pesan sukses tampil sebagai toast (dieksekusi sebelum UI di-refresh) */
+function withToast(action: FormAction, notify = true): FormAction {
+  return async (prev, fd) => {
+    const res = await action(prev, fd);
+    if (notify && res?.ok && res.message) toast(res.message);
+    return res;
+  };
+}
 
 export function SubmitButton({ children, variant = "primary", className, pendingText = "Memproses...", disabled }: { children: ReactNode; variant?: "primary" | "secondary" | "danger" | "success" | "warning" | "ghost"; className?: string; pendingText?: string; disabled?: boolean }) {
   const { pending } = useFormStatus();
@@ -24,6 +34,7 @@ export function ActionForm({
   resetOnSuccess,
   onSuccess,
   showSuccess = true,
+  inlineSuccess = false,
 }: {
   action: FormAction;
   children: ReactNode;
@@ -31,8 +42,11 @@ export function ActionForm({
   resetOnSuccess?: boolean;
   onSuccess?: (state: ActionState) => void;
   showSuccess?: boolean;
+  /** Tampilkan pesan sukses di dalam form (untuk halaman tanpa toaster, mis. lupa password) */
+  inlineSuccess?: boolean;
 }) {
-  const [state, formAction] = useActionState(action, null);
+  const wrapped = useMemo(() => withToast(action, showSuccess && !inlineSuccess), [action, showSuccess, inlineSuccess]);
+  const [state, formAction] = useActionState(wrapped, null);
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (state?.ok) {
@@ -48,8 +62,8 @@ export function ActionForm({
           <Alert tone="red">{state.error}</Alert>
         </div>
       )}
-      {state?.ok && showSuccess && state.message && (
-        <div className="mb-3">
+      {state?.ok && inlineSuccess && state.message && (
+        <div className="mb-3 break-all">
           <Alert tone="green">{state.message}</Alert>
         </div>
       )}
@@ -87,7 +101,8 @@ export function ConfirmButton({
   extra?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction] = useActionState(action, null);
+  const wrapped = useMemo(() => withToast(action), [action]);
+  const [state, formAction] = useActionState(wrapped, null);
   useEffect(() => {
     if (state?.ok) setOpen(false);
   }, [state]);
@@ -132,7 +147,8 @@ export function ConfirmButton({
 
 /** Tombol aksi sederhana tanpa dialog */
 export function InlineAction({ action, fields, children, variant = "secondary", size = "sm" }: { action: FormAction; fields: Record<string, string>; children: ReactNode; variant?: "primary" | "secondary" | "danger" | "success" | "warning" | "ghost"; size?: "sm" | "md" }) {
-  const [state, formAction] = useActionState(action, null);
+  const wrapped = useMemo(() => withToast(action), [action]);
+  const [state, formAction] = useActionState(wrapped, null);
   return (
     <form action={formAction} className="inline-flex items-center gap-2">
       {Object.entries(fields).map(([k, v]) => (

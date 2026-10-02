@@ -10,7 +10,7 @@ export default function ForgotPasswordPage() {
     <>
       <h1 className="mb-1 text-lg font-semibold text-slate-900">Lupa password</h1>
       <p className="mb-5 text-sm text-slate-500">Masukkan email atau username. Link reset berlaku 1 jam.</p>
-      <ActionForm action={forgotPasswordAction} className="space-y-4">
+      <ActionForm action={forgotPasswordAction} className="space-y-4" inlineSuccess>
         <Field label="Email / Username" required>
           <Input name="identifier" required autoFocus />
         </Field>

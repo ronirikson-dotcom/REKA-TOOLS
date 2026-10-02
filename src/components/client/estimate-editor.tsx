@@ -121,16 +121,16 @@ export function EstimateEditor({
                           <Badge tone={l.itemType === "service" ? "blue" : l.itemType === "part" ? "indigo" : "teal"}>{l.itemType === "service" ? "Jasa" : l.itemType === "part" ? "Part" : "Material"}</Badge>
                         </td>
                         <td className="px-3 py-2">
-                          <Input value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} className="min-w-48" />
+                          <Input value={l.description} onChange={(e) => update(l.key, { description: e.target.value })} className="min-w-56" />
                         </td>
                         <td className="px-3 py-2">
-                          <Input type="number" min={0.01} step="0.01" value={l.qty} onChange={(e) => update(l.key, { qty: Number(e.target.value) })} className="text-right" />
+                          <Input type="number" min={0.01} step="0.01" value={l.qty} onChange={(e) => update(l.key, { qty: Number(e.target.value) })} className="min-w-[4.5rem] px-2 text-right" />
                         </td>
                         <td className="px-3 py-2">
-                          <Input type="number" min={0} step="100" value={l.price} onChange={(e) => update(l.key, { price: Number(e.target.value) })} className="text-right" />
+                          <Input type="number" min={0} step="100" value={l.price} onChange={(e) => update(l.key, { price: Number(e.target.value) })} className="min-w-[7.5rem] px-2 text-right" />
                         </td>
                         <td className="px-3 py-2">
-                          <Input type="number" min={0} step="100" value={l.discount} onChange={(e) => update(l.key, { discount: Number(e.target.value) })} className="text-right" />
+                          <Input type="number" min={0} step="100" value={l.discount} onChange={(e) => update(l.key, { discount: Number(e.target.value) })} className="min-w-[6.5rem] px-2 text-right" />
                         </td>
                         <td className={cn("px-3 py-2 text-right font-medium tabular-nums", total < 0 && "text-red-600")}>{formatMoney(total)}</td>
                         <td className="px-2 py-2">

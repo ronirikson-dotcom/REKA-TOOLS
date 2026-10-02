@@ -7,6 +7,7 @@ import { navFor } from "@/lib/nav";
 import { Sidebar } from "@/components/client/sidebar";
 import { BranchSwitcher } from "@/components/client/branch-switcher";
 import { logoutAction } from "@/server/actions/auth";
+import { Toaster } from "@/components/client/toaster";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </header>
         <main className="mx-auto max-w-[1600px] px-4 py-5 lg:px-6">{children}</main>
       </div>
+      <Toaster />
     </div>
   );
 }

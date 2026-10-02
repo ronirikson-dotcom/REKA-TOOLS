@@ -150,23 +150,23 @@ export function PartLinesForm({
                     {warehouseId && <td className={cn("px-3 py-2 text-right tabular-nums", short && "font-semibold text-red-600")}>{l.part.quantity}</td>}
                     <td className="px-3 py-2">
                       {mode === "opname" ? (
-                        <Input type="number" min={0} step="0.01" value={l.countedQty} onChange={(e) => update(l.key, { countedQty: Number(e.target.value) })} className="text-right" />
+                        <Input type="number" min={0} step="0.01" value={l.countedQty} onChange={(e) => update(l.key, { countedQty: Number(e.target.value) })} className="min-w-[5.5rem] px-2 text-right" />
                       ) : (
-                        <Input type="number" min={0.01} step="0.01" value={l.qty} onChange={(e) => update(l.key, { qty: Number(e.target.value) })} className="text-right" />
+                        <Input type="number" min={0.01} step="0.01" value={l.qty} onChange={(e) => update(l.key, { qty: Number(e.target.value) })} className="min-w-[5.5rem] px-2 text-right" />
                       )}
                     </td>
                     {(mode === "receive" || mode === "po") && (
                       <td className="px-3 py-2">
-                        <Input type="number" min={0} step="100" value={l.unitCost} onChange={(e) => update(l.key, { unitCost: Number(e.target.value) })} className="text-right" />
+                        <Input type="number" min={0} step="100" value={l.unitCost} onChange={(e) => update(l.key, { unitCost: Number(e.target.value) })} className="min-w-[5.5rem] px-2 text-right" />
                       </td>
                     )}
                     {mode === "sale" && (
                       <>
                         <td className="px-3 py-2">
-                          <Input type="number" min={0} step="100" value={l.price} onChange={(e) => update(l.key, { price: Number(e.target.value) })} className="text-right" />
+                          <Input type="number" min={0} step="100" value={l.price} onChange={(e) => update(l.key, { price: Number(e.target.value) })} className="min-w-[5.5rem] px-2 text-right" />
                         </td>
                         <td className="px-3 py-2">
-                          <Input type="number" min={0} step="100" value={l.discount} onChange={(e) => update(l.key, { discount: Number(e.target.value) })} className="text-right" />
+                          <Input type="number" min={0} step="100" value={l.discount} onChange={(e) => update(l.key, { discount: Number(e.target.value) })} className="min-w-[5.5rem] px-2 text-right" />
                         </td>
                       </>
                     )}

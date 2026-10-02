@@ -1,11 +1,165 @@
-<div align="center">
+# Workshop Management System — Bengkel Mobil & Motor
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Implementasi dari dokumen **BRD | ERD | URS | SRS v1.0 (02 Oktober 2026)**: sistem operasional bengkel end-to-end, dari booking/walk-in sampai serah terima kendaraan, service history, dan reminder. Mendukung multi-cabang, RBAC, dan audit trail.
 
-  <h1>Built with AI Studio</h2>
+```
+Booking/Walk-in → Check-In → Inspeksi & Diagnosa → Estimate → Approval Customer → Work Order
+→ Mekanik + Part → Quality Control → Invoice → Payment → Serah Terima → Service History & Reminder
+```
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Isi aplikasi
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+15 modul fungsional sesuai SRS 4.5:
 
-</div>
+| Modul | Fitur utama |
+|---|---|
+| Dashboard | KPI operasional (kendaraan masuk/selesai, WO waiting/in progress/QC/rework, cycle time), sales (hari ini, MTD, rata-rata invoice), gross margin, efisiensi mekanik, customer, low stock |
+| Customer | Master retail/corporate/fleet, pencarian nama/HP/WA/no. polisi, histori transaksi, soft delete |
+| Kendaraan | Quick search no. polisi/rangka, service timeline (odometer, job, part, invoice), histori kepemilikan |
+| Booking | Scheduled → Confirmed → Arrived / Cancelled / No Show, reschedule, konfirmasi via WhatsApp |
+| Service Advisor | Check-in (odometer, fuel, kondisi, barang, keluhan, foto), inspeksi checklist mobil/motor (Good/Attention/Replace/Not Checked), estimate jasa + part + material + diskon + PPN, approval penuh/sebagian/reject dengan evidence |
+| Work Order | Dibuat dari pekerjaan yang disetujui, prioritas, bay, supervisor, lifecycle status lengkap dengan histori, estimate tambahan |
+| Mechanic Board | Tampilan mobile untuk mekanik: Start / Pause / Resume / Complete dengan timer, catatan job |
+| Quality Control | Checklist + Pass / Fail / Rework; Fail/Rework mengembalikan job ke mekanik |
+| Inventory / Parts | Stok per gudang, permintaan part dari WO, issue penuh/sebagian, retur, mutasi stok, receiving, stock opname, transfer antar gudang/cabang, low stock |
+| Purchasing / Supplier | Purchase order (draft → ordered → received), saran reorder dari low stock, receiving dari PO |
+| POS / Kasir | Invoice dari pekerjaan aktual, split payment (Tunai/QRIS/Debit/Kartu Kredit/Transfer/E-Wallet), kembalian, otorisasi piutang, refund & void, penjualan part langsung, closing kasir, cetak invoice/receipt |
+| Service History | Timeline per kendaraan & histori per customer |
+| CRM / Reminder | Reminder otomatis saat serah terima (berbasis tanggal & km per jenis jasa), follow-up status, link WhatsApp |
+| Reports | 27 laporan (operasional, sales, inventory, customer, finance), filter tanggal/cabang/teks, export Excel (CSV) & PDF (cetak) |
+| Settings | Perusahaan, pajak, penomoran, cabang & gudang, user, role & permission matrix, metode bayar, merk kendaraan, template inspeksi |
+
+Fitur lintas modul: global search, notifikasi in-app (Waiting QC, Waiting Parts, approval tertunda, low stock, job baru), audit log, PWA (bisa di-install di HP/tablet), REST API.
+
+## Business rule (BRD 1.8)
+
+| ID | Implementasi |
+|---|---|
+| BR-001/002/003/004 | `work_orders.vehicle_id` wajib; 1 kendaraan → banyak WO; 1 WO → banyak job; mekanik ditugaskan per job |
+| BR-005 | Stok hanya berubah lewat `stockIn/stockOut` (issue WO, penjualan, receiving, transfer, opname); setiap perubahan tercatat di `stock_movements` dengan referensi |
+| BR-006 | WO hanya dari estimate yang disetujui; pekerjaan tambahan lewat *estimate tambahan*; part yang terpakai melebihi persetujuan **memblokir invoice** |
+| BR-007 | Invoice dihitung dari job yang selesai + part yang benar-benar keluar (dikurangi retur) |
+| BR-008 | Serah terima butuh QC Pass + lunas/otorisasi piutang; override hanya oleh role berwenang dengan alasan, tercatat di audit |
+| BR-009 | Issue part dalam database transaction dengan row lock; constraint DB `quantity >= 0` |
+| BR-010 | Estimate yang sudah diputuskan tidak bisa diubah; ubah harga job butuh permission `workorder.price_override` + alasan, tercatat di audit |
+| BR-011 | Semua pembatalan (booking, check-in, estimate, WO, part request, PO, invoice, payment) wajib alasan dan user |
+| BR-012/013 | Transaksi menyimpan `company_id` + `branch_id`; scope cabang ditegakkan di service layer (bukan hanya UI) |
+| BR-014 | Penomoran atomik per company/cabang/tipe/hari, contoh `WO-JKT-261002-001` (prefix bisa diatur) |
+| BR-015 | Odometer lebih kecil dari histori ditolak, kecuali permission `checkin.override_odometer` + alasan |
+| BR-016 | Transaksi finansial/stok memakai cancel/void/soft delete, bukan hard delete |
+
+Acceptance criteria AC-001 s/d AC-008 (SRS 4.13) diuji otomatis di `tests/`.
+
+## Tech stack (SRS 4.1)
+
+- **Next.js 16** (App Router, Server Components, Server Actions) + React 19 + TypeScript
+- **PostgreSQL 16** (lokal / Supabase / managed PostgreSQL) via **Drizzle ORM**
+- Tailwind CSS 4, lucide-react
+- Auth: session cookie httpOnly + password hash scrypt, lockout 5x gagal (15 menit), reset password
+- Vitest untuk integration test terhadap PostgreSQL asli
+
+## Menjalankan secara lokal
+
+Butuh Node.js 20+ dan PostgreSQL 16 (bisa via Docker).
+
+```bash
+# 1. Database
+docker compose up -d            # atau gunakan PostgreSQL / Supabase sendiri
+
+# 2. Konfigurasi
+cp .env.example .env            # sesuaikan DATABASE_URL bila perlu
+
+# 3. Install, migrasi, data demo
+npm install
+npm run db:setup                # migrasi + seed (perusahaan demo, 2 cabang, master data, transaksi contoh)
+
+# 4. Jalankan
+npm run dev                     # http://localhost:3000
+```
+
+Perintah lain:
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run build && npm start` | Build & jalankan mode produksi |
+| `npm test` | Integration test (pakai `TEST_DATABASE_URL`, database di-reset setiap run) |
+| `npm run typecheck` | Pemeriksaan TypeScript |
+| `npm run db:reset` | Hapus semua data lalu migrasi + seed ulang (development saja) |
+| `npm run db:seed -- --no-demo` | Seed master data tanpa transaksi contoh |
+| `npm run db:generate` | Generate migrasi baru setelah mengubah `src/server/db/schema.ts` |
+
+### Akun demo
+
+Password semua akun: **`Password123`** (ganti sebelum dipakai sungguhan).
+
+| Username | Role | Cabang |
+|---|---|---|
+| `superadmin` | Super Admin | Semua |
+| `owner` | Owner / Management | Semua |
+| `manager.jkt`, `manager.bdg` | Branch Manager | Jakarta / Bandung |
+| `supervisor.jkt` | Workshop Supervisor | Jakarta |
+| `sa.jkt`, `sa.bdg` | Service Advisor | Jakarta / Bandung |
+| `mekanik1.jkt`, `mekanik2.jkt`, `mekanik.bdg` | Mechanic | Jakarta / Bandung |
+| `qc.jkt` | QC | Jakarta |
+| `parts.jkt` | Parts Staff | Jakarta |
+| `purchasing` | Purchasing | Jakarta |
+| `kasir.jkt`, `kasir.bdg` | Cashier | Jakarta / Bandung |
+| `accounting` | Accounting | Semua |
+| `cs.jkt` | Customer Service | Jakarta |
+
+Coba alur lengkap: login `sa.jkt` → Booking hari ini → *Kendaraan datang → Check-in* → Inspeksi → Buat estimate → Tandai terkirim → Simpan keputusan customer → Buat Work Order; lalu `supervisor.jkt` menugaskan mekanik, `mekanik1.jkt` Start + minta part, `parts.jkt` mengeluarkan part, `mekanik1.jkt` Complete, `qc.jkt` PASS, dan `kasir.jkt` menerbitkan invoice, menerima pembayaran, dan menyerahkan kendaraan.
+
+## Struktur kode
+
+```
+src/
+  app/(auth)/            login, lupa & reset password
+  app/(app)/             halaman modul (dashboard, customers, checkins, work-orders, ...)
+  app/api/               REST API + endpoint lookup untuk form
+  components/            komponen UI (server) & client/ (form interaktif)
+  lib/                   permission catalog, format, status, nav, WhatsApp template
+  server/db/schema.ts    skema database (ERD + kolom audit)
+  server/services/       business logic per modul (dipakai UI, API, seed & test)
+  server/actions/        server actions (UI → service)
+  server/auth/           password, session, context & scope cabang
+  server/seed/           data master & transaksi demo
+drizzle/                 file migrasi SQL
+tests/                   integration test alur & business rule
+```
+
+Semua aturan bisnis berada di `src/server/services/`, sehingga UI, REST API, dan test memakai logika yang sama.
+
+## REST API (SRS 4.9)
+
+Autentikasi: cookie session (web) atau `Authorization: Bearer <token>` dari `POST /api/auth/login` (`{ "identifier", "password" }`). Request berbasis cookie yang mengubah data wajib dari origin yang sama.
+
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET / POST | `/api/customers` | List/search, create customer |
+| GET / POST | `/api/vehicles` | List/search, create kendaraan |
+| GET / POST | `/api/checkins` | List, create check-in |
+| GET / POST | `/api/estimates` | List, create estimate |
+| GET / POST | `/api/work-orders` | List, create WO dari estimate |
+| GET / PATCH | `/api/work-orders/:id` | Detail; `action`: `update`, `assign`, `job`, `waiting_parts`, `resume_parts`, `cancel` |
+| GET / POST | `/api/part-requests` | List, create permintaan part |
+| POST | `/api/quality-controls` | Submit QC |
+| GET / POST | `/api/invoices` | List, create invoice WO / penjualan langsung |
+| GET / POST | `/api/payments` | List, terima pembayaran (header `Idempotency-Key` didukung) |
+| GET | `/api/reports/:key/export` | Export laporan CSV |
+
+Respons sukses `{ "data": ... }`, error `{ "error": { "code", "message" } }` dengan status 401/403/404/422.
+
+## Deploy
+
+- **Database**: buat project Supabase (atau PostgreSQL managed), isi `DATABASE_URL`, lalu `npm run db:migrate` dan `npm run db:seed -- --no-demo`.
+- **Aplikasi**: Vercel atau server Node (`npm run build && npm start`). Set `DATABASE_URL`, `APP_URL`, `STORAGE_DIR`.
+- **File foto/evidence**: saat ini disimpan di folder `STORAGE_DIR`. Untuk Vercel/serverless, ganti implementasi `src/server/storage.ts` ke object storage (Supabase Storage / S3); interface-nya sudah dipisahkan.
+- Backup otomatis harian + PITR mengikuti fasilitas database managed (SRS 4.12).
+
+## Batasan saat ini & tahap berikutnya
+
+- **Email reset password**: link reset ditampilkan di layar pada mode development dan dicatat di log server; pengiriman email (SMTP/provider) belum dihubungkan.
+- **WhatsApp**: menggunakan link click-to-chat (`wa.me`) dengan template pesan; integrasi WhatsApp Business API termasuk Phase 3/5.
+- **Row Level Security**: isolasi data ditegakkan di service layer. RLS PostgreSQL disarankan SRS sebagai lapisan tambahan dan belum diaktifkan.
+- **Excel**: export berupa CSV (UTF-8 BOM, langsung terbuka di Excel). PDF lewat fitur cetak browser.
+- Di luar scope MVP (BRD 1.10): payroll, general ledger penuh, payment gateway, integrasi accounting, telematics/OBD, aplikasi mobile native.

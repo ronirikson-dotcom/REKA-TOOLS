@@ -355,3 +355,20 @@ export async function listAuditLogs(
 export async function userOptions(ctx: AuthContext) {
   return db.select({ id: users.id, name: users.name }).from(users).where(eq(users.companyId, ctx.companyId)).orderBy(asc(users.name));
 }
+
+/** User aktif dengan permission tertentu di cabang (mis. supervisor untuk WO) */
+export async function usersWithPermission(ctx: AuthContext, permission: string, branchId?: string | null) {
+  return db
+    .selectDistinct({ id: users.id, name: users.name })
+    .from(users)
+    .innerJoin(rolePermissions, and(eq(rolePermissions.roleId, users.roleId), eq(rolePermissions.permissionCode, permission)))
+    .where(
+      and(
+        eq(users.companyId, ctx.companyId),
+        eq(users.status, "active"),
+        isNull(users.deletedAt),
+        branchId ? or(eq(users.branchId, branchId), eq(users.allBranches, true)) : undefined,
+      ),
+    )
+    .orderBy(asc(users.name));
+}

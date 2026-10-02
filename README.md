@@ -53,7 +53,7 @@ Acceptance criteria AC-001 s/d AC-008 (SRS 4.13) diuji otomatis di `tests/`.
 ## Tech stack (SRS 4.1)
 
 - **Next.js 16** (App Router, Server Components, Server Actions) + React 19 + TypeScript
-- **PostgreSQL 16** (lokal / Supabase / managed PostgreSQL) via **Drizzle ORM**
+- **PostgreSQL 16+** (lokal / Supabase / managed PostgreSQL) via **Drizzle ORM**, semua tabel di schema `wms`
 - Tailwind CSS 4, lucide-react
 - Auth: session cookie httpOnly + password hash scrypt, lockout 5x gagal (15 menit), reset password
 - Vitest untuk integration test terhadap PostgreSQL asli
@@ -149,10 +149,29 @@ Autentikasi: cookie session (web) atau `Authorization: Bearer <token>` dari `POS
 
 Respons sukses `{ "data": ... }`, error `{ "error": { "code", "message" } }` dengan status 401/403/404/422.
 
+## Koneksi ke Supabase
+
+Semua tabel aplikasi berada di schema PostgreSQL **`wms`** (bukan `public`), jadi bisa berbagi project Supabase dengan aplikasi lain tanpa bentrok. Schema `wms` tidak dibuka ke Data API: RLS aktif di semua tabel tanpa policy dan hak akses `anon` / `authenticated` dicabut (`supabase/hardening.sql`). Aplikasi terhubung langsung ke PostgreSQL sebagai role `postgres`, sehingga tidak terpengaruh.
+
+Status saat ini: project Supabase **Konsolidasi-Grup** sudah berisi schema `wms` (migrasi `0000_init` tercatat di `wms.__drizzle_migrations`), hardening, dan data demo yang sama dengan `npm run db:setup` (tanpa audit log & notifikasi). Akun demo di atas bisa langsung dipakai.
+
+Menghubungkan aplikasi:
+
+1. Supabase Dashboard → project → tombol **Connect** → salin connection string **Transaction pooler** (port `6543`). Direct connection (`db.<ref>.supabase.co`) hanya IPv6, jadi tidak bisa dari Vercel.
+2. Isi di `.env` (lokal) atau Environment Variables Vercel:
+   ```
+   DATABASE_URL=postgresql://postgres.<project-ref>:<PASSWORD-DB>@<host-pooler>:6543/postgres?sslmode=require
+   DB_PREPARE=false
+   ```
+   `DB_PREPARE` biarkan `false` untuk transaction pooler (tidak mendukung prepared statement); `true` hanya bila memakai session pooler / direct connection. Password database ada di Project Settings → Database (bisa di-reset di sana).
+3. `npm run db:migrate` aman dijalankan: migrasi yang sudah tercatat dilewati. **Jangan** jalankan `npm run db:reset` / `npm test` ke database Supabase — keduanya menghapus schema `wms`.
+
+Project Supabase baru: `npm run db:migrate` → `psql "$DATABASE_URL" -f supabase/hardening.sql` (atau tempel di SQL Editor) → `npm run db:seed -- --no-demo` untuk master data saja, atau `npm run db:seed` untuk data demo. Jalankan ulang `supabase/hardening.sql` setiap ada migrasi yang menambah tabel.
+
 ## Deploy
 
-- **Database**: buat project Supabase (atau PostgreSQL managed), isi `DATABASE_URL`, lalu `npm run db:migrate` dan `npm run db:seed -- --no-demo`.
-- **Aplikasi**: Vercel atau server Node (`npm run build && npm start`). Set `DATABASE_URL`, `APP_URL`, `STORAGE_DIR`.
+- **Database**: Supabase (lihat bagian di atas) atau PostgreSQL managed lain — `npm run db:migrate` lalu `npm run db:seed -- --no-demo`.
+- **Aplikasi**: Vercel atau server Node (`npm run build && npm start`). Set `DATABASE_URL`, `DB_PREPARE`, `APP_URL`, `STORAGE_DIR`.
 - **File foto/evidence**: saat ini disimpan di folder `STORAGE_DIR`. Untuk Vercel/serverless, ganti implementasi `src/server/storage.ts` ke object storage (Supabase Storage / S3); interface-nya sudah dipisahkan.
 - Backup otomatis harian + PITR mengikuti fasilitas database managed (SRS 4.12).
 
@@ -160,6 +179,6 @@ Respons sukses `{ "data": ... }`, error `{ "error": { "code", "message" } }` den
 
 - **Email reset password**: link reset ditampilkan di layar pada mode development dan dicatat di log server; pengiriman email (SMTP/provider) belum dihubungkan.
 - **WhatsApp**: menggunakan link click-to-chat (`wa.me`) dengan template pesan; integrasi WhatsApp Business API termasuk Phase 3/5.
-- **Row Level Security**: isolasi data ditegakkan di service layer. RLS PostgreSQL disarankan SRS sebagai lapisan tambahan dan belum diaktifkan.
+- **Row Level Security**: isolasi data per perusahaan/cabang ditegakkan di service layer. Di Supabase, RLS di schema `wms` dipakai untuk menutup akses Data API (deny-all); policy RLS per cabang/user belum dibuat karena aplikasi tidak memakai Supabase Auth.
 - **Excel**: export berupa CSV (UTF-8 BOM, langsung terbuka di Excel). PDF lewat fitur cetak browser.
 - Di luar scope MVP (BRD 1.10): payroll, general ledger penuh, payment gateway, integrasi accounting, telematics/OBD, aplikasi mobile native.

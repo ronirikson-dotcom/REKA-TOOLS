@@ -124,16 +124,16 @@ export async function runWorkshopFlow(
 /** Geser tanggal transaksi demo ke masa lalu agar dashboard & laporan berisi tren */
 async function backdate(woId: string, days: number) {
   const interval = sql.raw(`interval '${days} days'`);
-  await db.execute(sql`update vehicle_checkins set arrival_time = arrival_time - ${interval}, created_at = created_at - ${interval} where id = (select checkin_id from work_orders where id = ${woId})`);
-  await db.execute(sql`update work_orders set created_at = created_at - ${interval}, started_at = started_at - ${interval}, completed_at = completed_at - ${interval}, handover_at = handover_at - ${interval} where id = ${woId}`);
-  await db.execute(sql`update work_order_jobs set completed_at = completed_at - ${interval}, started_at = started_at - ${interval} where work_order_id = ${woId}`);
-  await db.execute(sql`update invoices set invoice_date = invoice_date - ${interval} where work_order_id = ${woId}`);
-  await db.execute(sql`update payments set payment_date = payment_date - ${interval} where invoice_id in (select id from invoices where work_order_id = ${woId})`);
-  await db.execute(sql`update estimates set created_at = created_at - ${interval} where checkin_id = (select checkin_id from work_orders where id = ${woId})`);
-  await db.execute(sql`update stock_movements set transaction_date = transaction_date - ${interval} where reference_id in (select id from part_requests where work_order_id = ${woId})`);
+  await db.execute(sql`update wms.vehicle_checkins set arrival_time = arrival_time - ${interval}, created_at = created_at - ${interval} where id = (select checkin_id from wms.work_orders where id = ${woId})`);
+  await db.execute(sql`update wms.work_orders set created_at = created_at - ${interval}, started_at = started_at - ${interval}, completed_at = completed_at - ${interval}, handover_at = handover_at - ${interval} where id = ${woId}`);
+  await db.execute(sql`update wms.work_order_jobs set completed_at = completed_at - ${interval}, started_at = started_at - ${interval} where work_order_id = ${woId}`);
+  await db.execute(sql`update wms.invoices set invoice_date = invoice_date - ${interval} where work_order_id = ${woId}`);
+  await db.execute(sql`update wms.payments set payment_date = payment_date - ${interval} where invoice_id in (select id from wms.invoices where work_order_id = ${woId})`);
+  await db.execute(sql`update wms.estimates set created_at = created_at - ${interval} where checkin_id = (select checkin_id from wms.work_orders where id = ${woId})`);
+  await db.execute(sql`update wms.stock_movements set transaction_date = transaction_date - ${interval} where reference_id in (select id from wms.part_requests where work_order_id = ${woId})`);
   // Simulasi durasi kerja mekanik yang realistis
-  await db.execute(sql`update work_order_mechanics m set duration_minutes = greatest(m.duration_minutes, round(j.standard_hour * 60 * (0.8 + random() * 0.5))) from work_order_jobs j where j.id = m.job_id and m.work_order_id = ${woId}`);
-  await db.execute(sql`update work_order_jobs set actual_minutes = (select coalesce(sum(duration_minutes),0) from work_order_mechanics m where m.job_id = work_order_jobs.id) where work_order_id = ${woId}`);
+  await db.execute(sql`update wms.work_order_mechanics m set duration_minutes = greatest(m.duration_minutes, round(j.standard_hour * 60 * (0.8 + random() * 0.5))) from wms.work_order_jobs j where j.id = m.job_id and m.work_order_id = ${woId}`);
+  await db.execute(sql`update wms.work_order_jobs set actual_minutes = (select coalesce(sum(duration_minutes),0) from wms.work_order_mechanics m where m.job_id = work_order_jobs.id) where work_order_id = ${woId}`);
 }
 
 export async function seedDemoTransactions(ids: SeedIds) {

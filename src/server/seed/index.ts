@@ -194,7 +194,7 @@ export async function seedDatabase(opts: { withDemoTransactions?: boolean } = {}
         vehicleIds[formatPlate(v.plate)] = ve.id;
       }
     }
-    await tx.execute(sql`insert into document_sequences (company_id, scope, doc_type, period, last_value) values (${company.id}, 'company', 'CUS', 'all', ${custSeq})`);
+    await tx.execute(sql`insert into wms.document_sequences (company_id, scope, doc_type, period, last_value) values (${company.id}, 'company', 'CUS', 'all', ${custSeq})`);
     return { companyId: company.id, jkt: jkt.id, bdg: bdg.id, whJkt: whJkt.id, whBdg: whBdg.id, userIds, vehicleIds };
   });
 
@@ -214,8 +214,8 @@ export async function seedDatabase(opts: { withDemoTransactions?: boolean } = {}
     });
   }
   // Set average cost saldo awal = harga beli
-  await db.execute(sql`update inventory i set average_cost = p.purchase_price from parts p where p.id = i.part_id`);
-  await db.execute(sql`update stock_movements m set unit_cost = p.purchase_price from parts p where p.id = m.part_id`);
+  await db.execute(sql`update wms.inventory i set average_cost = p.purchase_price from wms.parts p where p.id = i.part_id`);
+  await db.execute(sql`update wms.stock_movements m set unit_cost = p.purchase_price from wms.parts p where p.id = m.part_id`);
 
   if (opts.withDemoTransactions) {
     const { seedDemoTransactions } = await import("./demo");

@@ -14,6 +14,8 @@ function createDb(): Database {
   if (!url) throw new Error("DATABASE_URL belum diset. Lihat .env.example");
   const client = postgres(url, {
     max: Number(process.env.DB_POOL_MAX ?? 10),
+    // Supabase connection pooler (transaction mode, port 6543) tidak mendukung prepared statement
+    prepare: process.env.DB_PREPARE === "true",
     // numeric dikembalikan sebagai string oleh driver; Drizzle mode "number" yang mengonversi
     onnotice: () => {},
   });

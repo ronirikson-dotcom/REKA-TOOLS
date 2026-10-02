@@ -48,8 +48,8 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select c.arrival_time, c.checkin_number, b.name as branch, v.plate_number, cu.name as customer, c.odometer, c.complaint, c.status, w.wo_number
-        from vehicle_checkins c join branches b on b.id = c.branch_id join vehicles v on v.id = c.vehicle_id join customers cu on cu.id = c.customer_id
-        left join work_orders w on w.checkin_id = c.id
+        from wms.vehicle_checkins c join wms.branches b on b.id = c.branch_id join wms.vehicles v on v.id = c.vehicle_id join wms.customers cu on cu.id = c.customer_id
+        left join wms.work_orders w on w.checkin_id = c.id
         where c.branch_id in ${c.b} and c.arrival_time between ${c.from} and ${c.to} and (cu.name ilike ${like(c.q)} or v.plate_number ilike ${like(c.q)})
         order by c.arrival_time desc`),
   },
@@ -74,10 +74,10 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select w.wo_number, w.created_at, b.name as branch, v.plate_number, cu.name as customer, w.status, w.priority,
-          (select string_agg(distinct u.name, ', ') from work_order_mechanics m join users u on u.id = m.mechanic_id where m.work_order_id = w.id and m.is_active) as mechanics,
+          (select string_agg(distinct u.name, ', ') from wms.work_order_mechanics m join wms.users u on u.id = m.mechanic_id where m.work_order_id = w.id and m.is_active) as mechanics,
           (extract(epoch from (now() - ch.arrival_time)) / 3600)::float8 as aging_hours
-        from work_orders w join branches b on b.id = w.branch_id join vehicles v on v.id = w.vehicle_id join customers cu on cu.id = w.customer_id
-        join vehicle_checkins ch on ch.id = w.checkin_id
+        from wms.work_orders w join wms.branches b on b.id = w.branch_id join wms.vehicles v on v.id = w.vehicle_id join wms.customers cu on cu.id = w.customer_id
+        join wms.vehicle_checkins ch on ch.id = w.checkin_id
         where w.branch_id in ${c.b} and w.status not in ('completed','cancelled') and (cu.name ilike ${like(c.q)} or v.plate_number ilike ${like(c.q)})
         order by aging_hours desc`),
   },
@@ -103,9 +103,9 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select w.wo_number, b.name as branch, v.plate_number, cu.name as customer, ch.arrival_time, w.completed_at, w.handover_at,
           (extract(epoch from (coalesce(w.handover_at, w.completed_at) - ch.arrival_time)) / 3600)::float8 as cycle_hours,
-          (select count(*)::int from work_order_jobs j where j.work_order_id = w.id and j.status = 'completed') as jobs
-        from work_orders w join branches b on b.id = w.branch_id join vehicles v on v.id = w.vehicle_id join customers cu on cu.id = w.customer_id
-        join vehicle_checkins ch on ch.id = w.checkin_id
+          (select count(*)::int from wms.work_order_jobs j where j.work_order_id = w.id and j.status = 'completed') as jobs
+        from wms.work_orders w join wms.branches b on b.id = w.branch_id join wms.vehicles v on v.id = w.vehicle_id join wms.customers cu on cu.id = w.customer_id
+        join wms.vehicle_checkins ch on ch.id = w.checkin_id
         where w.branch_id in ${c.b} and w.status = 'completed' and w.completed_at between ${c.from} and ${c.to}
           and (cu.name ilike ${like(c.q)} or v.plate_number ilike ${like(c.q)})
         order by w.completed_at desc`),
@@ -129,7 +129,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         with a as (
           select w.status, extract(epoch from (now() - ch.arrival_time)) / 3600 as h
-          from work_orders w join vehicle_checkins ch on ch.id = w.checkin_id
+          from wms.work_orders w join wms.vehicle_checkins ch on ch.id = w.checkin_id
           where w.branch_id in ${c.b} and w.status not in ('completed','cancelled')
         )
         select status, count(*)::int as total,
@@ -178,8 +178,8 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select u.name as advisor, count(distinct w.id)::int as work_orders, count(distinct i.id)::int as invoices,
           coalesce(sum(i.grand_total),0)::float8 as revenue, coalesce(avg(i.grand_total),0)::float8 as avg_invoice
-        from work_orders w join users u on u.id = w.service_advisor_id
-        left join invoices i on i.work_order_id = w.id and i.status = 'issued'
+        from wms.work_orders w join wms.users u on u.id = w.service_advisor_id
+        left join wms.invoices i on i.work_order_id = w.id and i.status = 'issued'
         where w.branch_id in ${c.b} and w.created_at between ${c.from} and ${c.to}
         group by u.name order by revenue desc`),
   },
@@ -203,7 +203,7 @@ const REPORTS: ReportDef[] = [
         select (i.invoice_date at time zone 'Asia/Jakarta')::date::text as day, count(*)::int as invoices,
           sum(i.subtotal)::float8 as subtotal, sum(i.item_discount + i.additional_discount)::float8 as discount,
           sum(i.tax)::float8 as tax, sum(i.grand_total)::float8 as grand_total
-        from invoices i where i.branch_id in ${c.b} and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
+        from wms.invoices i where i.branch_id in ${c.b} and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
         group by 1 order by 1`),
   },
   {
@@ -222,7 +222,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select to_char(i.invoice_date at time zone 'Asia/Jakarta', 'YYYY-MM') as month, count(*)::int as invoices,
           sum(i.grand_total)::float8 as grand_total, avg(i.grand_total)::float8 as atv
-        from invoices i where i.branch_id in ${c.b} and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
+        from wms.invoices i where i.branch_id in ${c.b} and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
         group by 1 order by 1`),
   },
   {
@@ -245,7 +245,7 @@ const REPORTS: ReportDef[] = [
           coalesce(sum(i.subtotal - i.item_discount - i.additional_discount - i.cost_total),0)::float8 as gross_profit,
           case when sum(i.subtotal - i.item_discount - i.additional_discount) > 0 then
             (sum(i.subtotal - i.item_discount - i.additional_discount - i.cost_total) / sum(i.subtotal - i.item_discount - i.additional_discount) * 100)::float8 end as margin
-        from branches b left join invoices i on i.branch_id = b.id and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
+        from wms.branches b left join wms.invoices i on i.branch_id = b.id and i.status = 'issued' and i.invoice_date between ${c.from} and ${c.to}
         where b.id in ${c.b} group by b.name order by revenue desc`),
   },
   {
@@ -262,7 +262,7 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select ii.description, sum(ii.qty)::float8 as qty, sum(ii.total)::float8 as revenue
-        from invoice_items ii join invoices i on i.id = ii.invoice_id
+        from wms.invoice_items ii join wms.invoices i on i.id = ii.invoice_id
         where i.branch_id in ${c.b} and i.status='issued' and ii.item_type = 'service' and i.invoice_date between ${c.from} and ${c.to}
         group by ii.description order by revenue desc`),
   },
@@ -283,7 +283,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select ii.description, sum(ii.qty)::float8 as qty, sum(ii.total)::float8 as revenue, sum(ii.qty * ii.unit_cost)::float8 as cost,
           sum(ii.total - ii.qty * ii.unit_cost)::float8 as margin
-        from invoice_items ii join invoices i on i.id = ii.invoice_id
+        from wms.invoice_items ii join wms.invoices i on i.id = ii.invoice_id
         where i.branch_id in ${c.b} and i.status='issued' and ii.item_type <> 'service' and i.invoice_date between ${c.from} and ${c.to}
         group by ii.description order by revenue desc`),
   },
@@ -305,7 +305,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select coalesce(cu.name, 'Walk-in (tanpa customer)') as customer, cu.customer_type, count(*)::int as invoices,
           sum(i.grand_total)::float8 as revenue, avg(i.grand_total)::float8 as atv
-        from invoices i left join customers cu on cu.id = i.customer_id
+        from wms.invoices i left join wms.customers cu on cu.id = i.customer_id
         where i.branch_id in ${c.b} and i.status='issued' and i.invoice_date between ${c.from} and ${c.to}
           and coalesce(cu.name,'') ilike ${like(c.q)}
         group by cu.name, cu.customer_type order by revenue desc`),
@@ -330,7 +330,7 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select w.name as warehouse, p.sku, p.part_name, i.quantity::float8, p.minimum_stock::float8, i.average_cost::float8, (i.quantity * i.average_cost)::float8 as value
-        from inventory i join warehouses w on w.id = i.warehouse_id join parts p on p.id = i.part_id
+        from wms.inventory i join wms.warehouses w on w.id = i.warehouse_id join wms.parts p on p.id = i.part_id
         where w.branch_id in ${c.b} and (p.part_name ilike ${like(c.q)} or p.sku ilike ${like(c.q)})
         order by w.name, p.part_name`),
   },
@@ -356,7 +356,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select m.transaction_date, w.name as warehouse, p.sku, p.part_name, m.transaction_type, m.reference_number,
           m.quantity_in::float8, m.quantity_out::float8, m.balance_after::float8
-        from stock_movements m join warehouses w on w.id = m.warehouse_id join parts p on p.id = m.part_id
+        from wms.stock_movements m join wms.warehouses w on w.id = m.warehouse_id join wms.parts p on p.id = m.part_id
         where m.branch_id in ${c.b} and m.transaction_date between ${c.from} and ${c.to}
           and (p.part_name ilike ${like(c.q)} or p.sku ilike ${like(c.q)} or coalesce(m.reference_number,'') ilike ${like(c.q)})
         order by m.transaction_date desc`),
@@ -377,7 +377,7 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select p.sku, p.part_name, coalesce(s.qty,0)::float8 as quantity, p.minimum_stock::float8, (p.minimum_stock - coalesce(s.qty,0))::float8 as shortage
-        from parts p left join (select i.part_id, sum(i.quantity) as qty from inventory i join warehouses w on w.id = i.warehouse_id where w.branch_id in ${c.b} group by i.part_id) s on s.part_id = p.id
+        from wms.parts p left join (select i.part_id, sum(i.quantity) as qty from wms.inventory i join wms.warehouses w on w.id = i.warehouse_id where w.branch_id in ${c.b} group by i.part_id) s on s.part_id = p.id
         where p.company_id = ${c.companyId} and p.status = 'active' and p.deleted_at is null and coalesce(s.qty,0) <= p.minimum_stock
         order by shortage desc`),
   },
@@ -399,14 +399,14 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         with outq as (
           select m.part_id, sum(m.quantity_out) filter (where m.transaction_type in ('issue','sale')) as qty_out
-          from stock_movements m where m.branch_id in ${c.b} and m.transaction_date between ${c.from} and ${c.to} group by m.part_id
+          from wms.stock_movements m where m.branch_id in ${c.b} and m.transaction_date between ${c.from} and ${c.to} group by m.part_id
         ), st as (
           select i.part_id, sum(i.quantity) as qty, sum(i.quantity * i.average_cost) as value
-          from inventory i join warehouses w on w.id = i.warehouse_id where w.branch_id in ${c.b} group by i.part_id
+          from wms.inventory i join wms.warehouses w on w.id = i.warehouse_id where w.branch_id in ${c.b} group by i.part_id
         ), ranked as (
           select p.sku, p.part_name, coalesce(o.qty_out,0) as qty_out, coalesce(s.qty,0) as stock, coalesce(s.value,0) as stock_value,
             percent_rank() over (order by coalesce(o.qty_out,0) desc) as pr
-          from parts p left join outq o on o.part_id = p.id left join st s on s.part_id = p.id
+          from wms.parts p left join outq o on o.part_id = p.id left join st s on s.part_id = p.id
           where p.company_id = ${c.companyId} and p.deleted_at is null
         )
         select sku, part_name, qty_out::float8, stock::float8, stock_value::float8,
@@ -430,7 +430,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select w.name as warehouse, coalesce(pc.name, 'Tanpa kategori') as category, count(*)::int as items,
           sum(i.quantity)::float8 as quantity, sum(i.quantity * i.average_cost)::float8 as value
-        from inventory i join warehouses w on w.id = i.warehouse_id join parts p on p.id = i.part_id left join part_categories pc on pc.id = p.category_id
+        from wms.inventory i join wms.warehouses w on w.id = i.warehouse_id join wms.parts p on p.id = i.part_id left join wms.part_categories pc on pc.id = p.category_id
         where w.branch_id in ${c.b} and i.quantity > 0
         group by w.name, pc.name order by w.name, value desc`),
   },
@@ -453,10 +453,10 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select cu.customer_code, cu.name as customer, cu.phone,
-          (select count(*)::int from vehicle_checkins ch where ch.customer_id = cu.id and ch.branch_id in ${c.b} and ch.arrival_time between ${c.from} and ${c.to}) as visits,
-          (select max(ch.arrival_time) from vehicle_checkins ch where ch.customer_id = cu.id and ch.branch_id in ${c.b}) as last_visit,
-          coalesce((select sum(i.grand_total) from invoices i where i.customer_id = cu.id and i.status='issued' and i.branch_id in ${c.b} and i.invoice_date between ${c.from} and ${c.to}),0)::float8 as total_spend
-        from customers cu where cu.company_id = ${c.companyId} and cu.deleted_at is null and cu.name ilike ${like(c.q)}
+          (select count(*)::int from wms.vehicle_checkins ch where ch.customer_id = cu.id and ch.branch_id in ${c.b} and ch.arrival_time between ${c.from} and ${c.to}) as visits,
+          (select max(ch.arrival_time) from wms.vehicle_checkins ch where ch.customer_id = cu.id and ch.branch_id in ${c.b}) as last_visit,
+          coalesce((select sum(i.grand_total) from wms.invoices i where i.customer_id = cu.id and i.status='issued' and i.branch_id in ${c.b} and i.invoice_date between ${c.from} and ${c.to}),0)::float8 as total_spend
+        from wms.customers cu where cu.company_id = ${c.companyId} and cu.deleted_at is null and cu.name ilike ${like(c.q)}
         order by total_spend desc, cu.name`),
   },
   {
@@ -479,9 +479,9 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select v.plate_number, concat_ws(' ', vb.name, vm.name, v.year) as vehicle, cu.name as customer,
           count(ch.id)::int as visits, max(ch.arrival_time) as last_visit, v.last_odometer,
-          coalesce((select sum(i.grand_total) from invoices i where i.vehicle_id = v.id and i.status='issued' and i.branch_id in ${c.b}),0)::float8 as total_spend
-        from vehicles v join customers cu on cu.id = v.customer_id left join vehicle_brands vb on vb.id = v.brand_id left join vehicle_models vm on vm.id = v.model_id
-        join vehicle_checkins ch on ch.vehicle_id = v.id and ch.branch_id in ${c.b} and ch.arrival_time between ${c.from} and ${c.to}
+          coalesce((select sum(i.grand_total) from wms.invoices i where i.vehicle_id = v.id and i.status='issued' and i.branch_id in ${c.b}),0)::float8 as total_spend
+        from wms.vehicles v join wms.customers cu on cu.id = v.customer_id left join wms.vehicle_brands vb on vb.id = v.brand_id left join wms.vehicle_models vm on vm.id = v.model_id
+        join wms.vehicle_checkins ch on ch.vehicle_id = v.id and ch.branch_id in ${c.b} and ch.arrival_time between ${c.from} and ${c.to}
         where v.company_id = ${c.companyId} and v.plate_number ilike ${like(c.q)}
         group by v.id, v.plate_number, vb.name, vm.name, v.year, cu.name, v.last_odometer order by last_visit desc`),
   },
@@ -501,7 +501,7 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select cu.name as customer, cu.phone, count(*)::int as visits, min(ch.arrival_time) as first_visit, max(ch.arrival_time) as last_visit
-        from vehicle_checkins ch join customers cu on cu.id = ch.customer_id
+        from wms.vehicle_checkins ch join wms.customers cu on cu.id = ch.customer_id
         where ch.branch_id in ${c.b} and ch.status <> 'cancelled' and ch.arrival_time between ${c.from} and ${c.to}
         group by cu.id, cu.name, cu.phone having count(*) >= 2 order by visits desc`),
   },
@@ -523,7 +523,7 @@ const REPORTS: ReportDef[] = [
         with v as (
           select ch.customer_id, to_char(ch.arrival_time at time zone 'Asia/Jakarta', 'YYYY-MM') as month,
             min(ch.arrival_time) over (partition by ch.customer_id) as first_ever
-          from vehicle_checkins ch where ch.branch_id in ${c.b} and ch.status <> 'cancelled'
+          from wms.vehicle_checkins ch where ch.branch_id in ${c.b} and ch.status <> 'cancelled'
         ), m as (
           select month, customer_id, bool_or(to_char(first_ever at time zone 'Asia/Jakarta','YYYY-MM') = month) as is_new
           from v group by month, customer_id
@@ -551,7 +551,7 @@ const REPORTS: ReportDef[] = [
     run: (c) =>
       rawRows(sql`
         select r.due_date::text, r.due_odometer, v.plate_number, cu.name as customer, cu.whatsapp, r.description, r.status
-        from service_reminders r join vehicles v on v.id = r.vehicle_id join customers cu on cu.id = r.customer_id
+        from wms.service_reminders r join wms.vehicles v on v.id = r.vehicle_id join wms.customers cu on cu.id = r.customer_id
         where r.company_id = ${c.companyId} and (r.branch_id in ${c.b} or r.branch_id is null) and r.status in ('pending','contacted')
           and (r.due_date <= ${c.toISO} or v.last_odometer >= r.due_odometer)
         order by r.due_date`),
@@ -574,10 +574,10 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         with d as (select generate_series(${c.fromISO}::date, ${c.toISO}::date, interval '1 day')::date as day)
         select d.day::text as day,
-          coalesce((select sum(i.subtotal - i.item_discount - i.additional_discount) from invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as net_revenue,
-          coalesce((select sum(i.tax) from invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as tax,
-          coalesce((select sum(i.grand_total) from invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as gross,
-          coalesce((select sum(case when p.type='payment' then p.amount else -p.amount end) from payments p where p.branch_id in ${c.b} and p.status='posted' and (p.payment_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as received
+          coalesce((select sum(i.subtotal - i.item_discount - i.additional_discount) from wms.invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as net_revenue,
+          coalesce((select sum(i.tax) from wms.invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as tax,
+          coalesce((select sum(i.grand_total) from wms.invoices i where i.branch_id in ${c.b} and i.status='issued' and (i.invoice_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as gross,
+          coalesce((select sum(case when p.type='payment' then p.amount else -p.amount end) from wms.payments p where p.branch_id in ${c.b} and p.status='posted' and (p.payment_date at time zone 'Asia/Jakarta')::date = d.day),0)::float8 as received
         from d order by d.day`),
   },
   {
@@ -599,7 +599,7 @@ const REPORTS: ReportDef[] = [
       rawRows(sql`
         select i.invoice_date, i.invoice_number, cu.name as customer, i.subtotal::float8, i.item_discount::float8, i.additional_discount::float8,
           ((i.item_discount + i.additional_discount) / nullif(i.subtotal,0) * 100)::float8 as discount_pct
-        from invoices i left join customers cu on cu.id = i.customer_id
+        from wms.invoices i left join wms.customers cu on cu.id = i.customer_id
         where i.branch_id in ${c.b} and i.status='issued' and i.invoice_date between ${c.from} and ${c.to} and (i.item_discount + i.additional_discount) > 0
         order by i.invoice_date desc`),
   },
@@ -625,7 +625,7 @@ const REPORTS: ReportDef[] = [
           coalesce(sum(ii.qty * ii.unit_cost),0)::float8 as cost,
           (sum(ii.total) - sum(ii.qty * ii.unit_cost))::float8 as gross_profit,
           ((sum(ii.total) - sum(ii.qty * ii.unit_cost)) / nullif(sum(ii.total),0) * 100)::float8 as margin
-        from invoices i join invoice_items ii on ii.invoice_id = i.id
+        from wms.invoices i join wms.invoice_items ii on ii.invoice_id = i.id
         where i.branch_id in ${c.b} and i.status='issued' and i.invoice_date between ${c.from} and ${c.to}
         group by 1 order by 1`),
   },
@@ -648,7 +648,7 @@ const REPORTS: ReportDef[] = [
           coalesce(sum(p.amount) filter (where p.type='payment'),0)::float8 as received,
           coalesce(sum(p.amount) filter (where p.type='refund'),0)::float8 as refunded,
           (coalesce(sum(p.amount) filter (where p.type='payment'),0) - coalesce(sum(p.amount) filter (where p.type='refund'),0))::float8 as net
-        from payments p join payment_methods pm on pm.id = p.payment_method_id
+        from wms.payments p join wms.payment_methods pm on pm.id = p.payment_method_id
         where p.branch_id in ${c.b} and p.status='posted' and p.payment_date between ${c.from} and ${c.to}
         group by pm.name, pm.sort_order order by pm.sort_order`),
   },
@@ -674,7 +674,7 @@ const REPORTS: ReportDef[] = [
         select i.invoice_number, i.invoice_date, coalesce(cu.name,'Walk-in') as customer, i.grand_total::float8, i.paid_amount::float8,
           (i.grand_total - i.paid_amount)::float8 as outstanding, i.ar_due_date::text,
           greatest(0, (current_date - coalesce(i.ar_due_date, (i.invoice_date at time zone 'Asia/Jakarta')::date)))::int as days_overdue
-        from invoices i left join customers cu on cu.id = i.customer_id
+        from wms.invoices i left join wms.customers cu on cu.id = i.customer_id
         where i.branch_id in ${c.b} and i.status='issued' and i.paid_amount < i.grand_total
           and (coalesce(cu.name,'') ilike ${like(c.q)} or i.invoice_number ilike ${like(c.q)})
         order by days_overdue desc, i.invoice_date`),

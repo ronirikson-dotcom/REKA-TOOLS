@@ -12,13 +12,19 @@ import {
   integer,
   jsonb,
   numeric,
-  pgTable,
+  pgSchema,
   primaryKey,
   text,
   timestamp,
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+
+/**
+ * Semua tabel berada di schema Postgres tersendiri ("wms") agar terpisah dari aplikasi lain
+ * dalam satu project Supabase dan tidak terekspos ke Data API (PostgREST).
+ */
+export const wms = pgSchema("wms");
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,7 +58,7 @@ export type CompanySettings = {
 // ---------------------------------------------------------------------------
 // Organisasi, user & akses
 // ---------------------------------------------------------------------------
-export const companies = pgTable("companies", {
+export const companies = wms.table("companies", {
   id: id(),
   code: text("code").notNull().unique(),
   name: text("name").notNull(),
@@ -66,7 +72,7 @@ export const companies = pgTable("companies", {
   ...auditCols(),
 });
 
-export const branches = pgTable(
+export const branches = wms.table(
   "branches",
   {
     id: id(),
@@ -82,7 +88,7 @@ export const branches = pgTable(
   (t) => [uniqueIndex("branches_company_code_uq").on(t.companyId, t.code)],
 );
 
-export const roles = pgTable(
+export const roles = wms.table(
   "roles",
   {
     id: id(),
@@ -95,14 +101,14 @@ export const roles = pgTable(
   (t) => [uniqueIndex("roles_company_name_uq").on(t.companyId, t.name)],
 );
 
-export const permissions = pgTable("permissions", {
+export const permissions = wms.table("permissions", {
   code: text("code").primaryKey(),
   module: text("module").notNull(),
   action: text("action").notNull(),
   description: text("description").notNull(),
 });
 
-export const rolePermissions = pgTable(
+export const rolePermissions = wms.table(
   "role_permissions",
   {
     roleId: uuid("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
@@ -111,7 +117,7 @@ export const rolePermissions = pgTable(
   (t) => [primaryKey({ columns: [t.roleId, t.permissionCode] })],
 );
 
-export const users = pgTable(
+export const users = wms.table(
   "users",
   {
     id: id(),
@@ -139,7 +145,7 @@ export const users = pgTable(
   ],
 );
 
-export const sessions = pgTable(
+export const sessions = wms.table(
   "sessions",
   {
     /** SHA-256 dari token session (token asli hanya ada di cookie) */
@@ -155,7 +161,7 @@ export const sessions = pgTable(
   (t) => [index("sessions_user_idx").on(t.userId)],
 );
 
-export const passwordResetTokens = pgTable("password_reset_tokens", {
+export const passwordResetTokens = wms.table("password_reset_tokens", {
   id: id(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   tokenHash: text("token_hash").notNull().unique(),
@@ -164,7 +170,7 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
-export const auditLogs = pgTable(
+export const auditLogs = wms.table(
   "audit_logs",
   {
     id: id(),
@@ -188,7 +194,7 @@ export const auditLogs = pgTable(
   ],
 );
 
-export const documentSequences = pgTable(
+export const documentSequences = wms.table(
   "document_sequences",
   {
     companyId: uuid("company_id").notNull().references(() => companies.id),
@@ -201,7 +207,7 @@ export const documentSequences = pgTable(
   (t) => [primaryKey({ columns: [t.companyId, t.scope, t.docType, t.period] })],
 );
 
-export const notifications = pgTable(
+export const notifications = wms.table(
   "notifications",
   {
     id: id(),
@@ -219,7 +225,7 @@ export const notifications = pgTable(
   (t) => [index("notifications_company_idx").on(t.companyId, t.createdAt)],
 );
 
-export const notificationReads = pgTable(
+export const notificationReads = wms.table(
   "notification_reads",
   {
     notificationId: uuid("notification_id").notNull().references(() => notifications.id, { onDelete: "cascade" }),
@@ -229,7 +235,7 @@ export const notificationReads = pgTable(
   (t) => [primaryKey({ columns: [t.notificationId, t.userId] })],
 );
 
-export const attachments = pgTable(
+export const attachments = wms.table(
   "attachments",
   {
     id: id(),
@@ -250,7 +256,7 @@ export const attachments = pgTable(
 // ---------------------------------------------------------------------------
 // Master data
 // ---------------------------------------------------------------------------
-export const customers = pgTable(
+export const customers = wms.table(
   "customers",
   {
     id: id(),
@@ -278,7 +284,7 @@ export const customers = pgTable(
   ],
 );
 
-export const vehicleBrands = pgTable(
+export const vehicleBrands = wms.table(
   "vehicle_brands",
   {
     id: id(),
@@ -291,7 +297,7 @@ export const vehicleBrands = pgTable(
   (t) => [uniqueIndex("vehicle_brands_uq").on(t.companyId, t.vehicleType, t.name)],
 );
 
-export const vehicleModels = pgTable(
+export const vehicleModels = wms.table(
   "vehicle_models",
   {
     id: id(),
@@ -302,7 +308,7 @@ export const vehicleModels = pgTable(
   (t) => [uniqueIndex("vehicle_models_uq").on(t.brandId, t.name)],
 );
 
-export const vehicles = pgTable(
+export const vehicles = wms.table(
   "vehicles",
   {
     id: id(),
@@ -332,7 +338,7 @@ export const vehicles = pgTable(
   ],
 );
 
-export const vehicleOwnerships = pgTable("vehicle_ownerships", {
+export const vehicleOwnerships = wms.table("vehicle_ownerships", {
   id: id(),
   vehicleId: uuid("vehicle_id").notNull().references(() => vehicles.id),
   customerId: uuid("customer_id").notNull().references(() => customers.id),
@@ -343,7 +349,7 @@ export const vehicleOwnerships = pgTable("vehicle_ownerships", {
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
-export const services = pgTable(
+export const services = wms.table(
   "services",
   {
     id: id(),
@@ -364,7 +370,7 @@ export const services = pgTable(
   (t) => [uniqueIndex("services_company_code_uq").on(t.companyId, t.serviceCode)],
 );
 
-export const partCategories = pgTable(
+export const partCategories = wms.table(
   "part_categories",
   {
     id: id(),
@@ -375,7 +381,7 @@ export const partCategories = pgTable(
   (t) => [uniqueIndex("part_categories_uq").on(t.companyId, t.name)],
 );
 
-export const parts = pgTable(
+export const parts = wms.table(
   "parts",
   {
     id: id(),
@@ -402,7 +408,7 @@ export const parts = pgTable(
   ],
 );
 
-export const suppliers = pgTable(
+export const suppliers = wms.table(
   "suppliers",
   {
     id: id(),
@@ -420,7 +426,7 @@ export const suppliers = pgTable(
   (t) => [uniqueIndex("suppliers_company_code_uq").on(t.companyId, t.code)],
 );
 
-export const paymentMethods = pgTable(
+export const paymentMethods = wms.table(
   "payment_methods",
   {
     id: id(),
@@ -437,7 +443,7 @@ export const paymentMethods = pgTable(
   (t) => [uniqueIndex("payment_methods_uq").on(t.companyId, t.code)],
 );
 
-export const inspectionTemplates = pgTable("inspection_templates", {
+export const inspectionTemplates = wms.table("inspection_templates", {
   id: id(),
   companyId: uuid("company_id").notNull().references(() => companies.id),
   vehicleType: text("vehicle_type").notNull(),
@@ -446,7 +452,7 @@ export const inspectionTemplates = pgTable("inspection_templates", {
   ...auditCols(),
 });
 
-export const inspectionTemplateItems = pgTable("inspection_template_items", {
+export const inspectionTemplateItems = wms.table("inspection_template_items", {
   id: id(),
   templateId: uuid("template_id").notNull().references(() => inspectionTemplates.id, { onDelete: "cascade" }),
   category: text("category").notNull(),
@@ -457,7 +463,7 @@ export const inspectionTemplateItems = pgTable("inspection_template_items", {
 // ---------------------------------------------------------------------------
 // Inventory
 // ---------------------------------------------------------------------------
-export const warehouses = pgTable(
+export const warehouses = wms.table(
   "warehouses",
   {
     id: id(),
@@ -472,7 +478,7 @@ export const warehouses = pgTable(
   (t) => [uniqueIndex("warehouses_uq").on(t.companyId, t.code)],
 );
 
-export const inventory = pgTable(
+export const inventory = wms.table(
   "inventory",
   {
     id: id(),
@@ -489,7 +495,7 @@ export const inventory = pgTable(
   ],
 );
 
-export const stockMovements = pgTable(
+export const stockMovements = wms.table(
   "stock_movements",
   {
     id: id(),
@@ -518,7 +524,7 @@ export const stockMovements = pgTable(
   ],
 );
 
-export const purchaseOrders = pgTable(
+export const purchaseOrders = wms.table(
   "purchase_orders",
   {
     id: id(),
@@ -539,7 +545,7 @@ export const purchaseOrders = pgTable(
   (t) => [uniqueIndex("purchase_orders_uq").on(t.companyId, t.poNumber)],
 );
 
-export const purchaseOrderItems = pgTable("purchase_order_items", {
+export const purchaseOrderItems = wms.table("purchase_order_items", {
   id: id(),
   purchaseOrderId: uuid("purchase_order_id").notNull().references(() => purchaseOrders.id, { onDelete: "cascade" }),
   partId: uuid("part_id").notNull().references(() => parts.id),
@@ -549,7 +555,7 @@ export const purchaseOrderItems = pgTable("purchase_order_items", {
   total: money("total").notNull(),
 });
 
-export const goodsReceipts = pgTable(
+export const goodsReceipts = wms.table(
   "goods_receipts",
   {
     id: id(),
@@ -569,7 +575,7 @@ export const goodsReceipts = pgTable(
   (t) => [uniqueIndex("goods_receipts_uq").on(t.companyId, t.receiptNumber)],
 );
 
-export const goodsReceiptItems = pgTable("goods_receipt_items", {
+export const goodsReceiptItems = wms.table("goods_receipt_items", {
   id: id(),
   goodsReceiptId: uuid("goods_receipt_id").notNull().references(() => goodsReceipts.id, { onDelete: "cascade" }),
   partId: uuid("part_id").notNull().references(() => parts.id),
@@ -579,7 +585,7 @@ export const goodsReceiptItems = pgTable("goods_receipt_items", {
   total: money("total").notNull(),
 });
 
-export const stockAdjustments = pgTable(
+export const stockAdjustments = wms.table(
   "stock_adjustments",
   {
     id: id(),
@@ -597,7 +603,7 @@ export const stockAdjustments = pgTable(
   (t) => [uniqueIndex("stock_adjustments_uq").on(t.companyId, t.adjustmentNumber)],
 );
 
-export const stockAdjustmentItems = pgTable("stock_adjustment_items", {
+export const stockAdjustmentItems = wms.table("stock_adjustment_items", {
   id: id(),
   adjustmentId: uuid("adjustment_id").notNull().references(() => stockAdjustments.id, { onDelete: "cascade" }),
   partId: uuid("part_id").notNull().references(() => parts.id),
@@ -607,7 +613,7 @@ export const stockAdjustmentItems = pgTable("stock_adjustment_items", {
   unitCost: money("unit_cost").notNull().default(0),
 });
 
-export const stockTransfers = pgTable(
+export const stockTransfers = wms.table(
   "stock_transfers",
   {
     id: id(),
@@ -624,7 +630,7 @@ export const stockTransfers = pgTable(
   (t) => [uniqueIndex("stock_transfers_uq").on(t.companyId, t.transferNumber)],
 );
 
-export const stockTransferItems = pgTable("stock_transfer_items", {
+export const stockTransferItems = wms.table("stock_transfer_items", {
   id: id(),
   transferId: uuid("transfer_id").notNull().references(() => stockTransfers.id, { onDelete: "cascade" }),
   partId: uuid("part_id").notNull().references(() => parts.id),
@@ -635,7 +641,7 @@ export const stockTransferItems = pgTable("stock_transfer_items", {
 // ---------------------------------------------------------------------------
 // Front office: booking, check-in, inspeksi, estimate
 // ---------------------------------------------------------------------------
-export const bookings = pgTable(
+export const bookings = wms.table(
   "bookings",
   {
     id: id(),
@@ -662,7 +668,7 @@ export const bookings = pgTable(
   ],
 );
 
-export const vehicleCheckins = pgTable(
+export const vehicleCheckins = wms.table(
   "vehicle_checkins",
   {
     id: id(),
@@ -693,7 +699,7 @@ export const vehicleCheckins = pgTable(
   ],
 );
 
-export const inspections = pgTable(
+export const inspections = wms.table(
   "inspections",
   {
     id: id(),
@@ -710,7 +716,7 @@ export const inspections = pgTable(
   (t) => [index("inspections_checkin_idx").on(t.checkinId)],
 );
 
-export const inspectionItems = pgTable("inspection_items", {
+export const inspectionItems = wms.table("inspection_items", {
   id: id(),
   inspectionId: uuid("inspection_id").notNull().references(() => inspections.id, { onDelete: "cascade" }),
   category: text("category").notNull(),
@@ -721,7 +727,7 @@ export const inspectionItems = pgTable("inspection_items", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const estimates = pgTable(
+export const estimates = wms.table(
   "estimates",
   {
     id: id(),
@@ -754,7 +760,7 @@ export const estimates = pgTable(
   ],
 );
 
-export const estimateItems = pgTable("estimate_items", {
+export const estimateItems = wms.table("estimate_items", {
   id: id(),
   estimateId: uuid("estimate_id").notNull().references(() => estimates.id, { onDelete: "cascade" }),
   /** service | part | material */
@@ -771,7 +777,7 @@ export const estimateItems = pgTable("estimate_items", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const estimateApprovals = pgTable("estimate_approvals", {
+export const estimateApprovals = wms.table("estimate_approvals", {
   id: id(),
   estimateId: uuid("estimate_id").notNull().references(() => estimates.id),
   /** approved | partially_approved | rejected */
@@ -789,7 +795,7 @@ export const estimateApprovals = pgTable("estimate_approvals", {
 // ---------------------------------------------------------------------------
 // Workshop: work order, job, mekanik, part request, QC
 // ---------------------------------------------------------------------------
-export const workOrders = pgTable(
+export const workOrders = wms.table(
   "work_orders",
   {
     id: id(),
@@ -828,7 +834,7 @@ export const workOrders = pgTable(
   ],
 );
 
-export const workOrderStatusHistory = pgTable(
+export const workOrderStatusHistory = wms.table(
   "work_order_status_history",
   {
     id: id(),
@@ -842,7 +848,7 @@ export const workOrderStatusHistory = pgTable(
   (t) => [index("wo_status_history_idx").on(t.workOrderId)],
 );
 
-export const workOrderJobs = pgTable(
+export const workOrderJobs = wms.table(
   "work_order_jobs",
   {
     id: id(),
@@ -868,7 +874,7 @@ export const workOrderJobs = pgTable(
   (t) => [index("wo_jobs_wo_idx").on(t.workOrderId)],
 );
 
-export const workOrderMechanics = pgTable(
+export const workOrderMechanics = wms.table(
   "work_order_mechanics",
   {
     id: id(),
@@ -888,7 +894,7 @@ export const workOrderMechanics = pgTable(
   ],
 );
 
-export const jobTimeLogs = pgTable(
+export const jobTimeLogs = wms.table(
   "job_time_logs",
   {
     id: id(),
@@ -903,7 +909,7 @@ export const jobTimeLogs = pgTable(
   (t) => [index("job_time_logs_job_idx").on(t.jobId)],
 );
 
-export const partRequests = pgTable(
+export const partRequests = wms.table(
   "part_requests",
   {
     id: id(),
@@ -926,7 +932,7 @@ export const partRequests = pgTable(
   ],
 );
 
-export const partRequestItems = pgTable("part_request_items", {
+export const partRequestItems = wms.table("part_request_items", {
   id: id(),
   partRequestId: uuid("part_request_id").notNull().references(() => partRequests.id, { onDelete: "cascade" }),
   partId: uuid("part_id").notNull().references(() => parts.id),
@@ -940,7 +946,7 @@ export const partRequestItems = pgTable("part_request_items", {
   notes: text("notes"),
 });
 
-export const qualityControls = pgTable(
+export const qualityControls = wms.table(
   "quality_controls",
   {
     id: id(),
@@ -961,7 +967,7 @@ export const qualityControls = pgTable(
 // ---------------------------------------------------------------------------
 // Kasir: invoice & payment
 // ---------------------------------------------------------------------------
-export const invoices = pgTable(
+export const invoices = wms.table(
   "invoices",
   {
     id: id(),
@@ -1006,7 +1012,7 @@ export const invoices = pgTable(
   ],
 );
 
-export const invoiceItems = pgTable("invoice_items", {
+export const invoiceItems = wms.table("invoice_items", {
   id: id(),
   invoiceId: uuid("invoice_id").notNull().references(() => invoices.id, { onDelete: "cascade" }),
   /** service | part | material */
@@ -1022,7 +1028,7 @@ export const invoiceItems = pgTable("invoice_items", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
-export const payments = pgTable(
+export const payments = wms.table(
   "payments",
   {
     id: id(),
@@ -1060,7 +1066,7 @@ export const payments = pgTable(
 // ---------------------------------------------------------------------------
 // CRM
 // ---------------------------------------------------------------------------
-export const serviceReminders = pgTable(
+export const serviceReminders = wms.table(
   "service_reminders",
   {
     id: id(),

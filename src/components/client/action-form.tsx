@@ -4,14 +4,22 @@ import { useActionState, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { useFormStatus } from "react-dom";
 import { Alert, buttonClass, cn, Textarea } from "@/components/ui";
 import { toast } from "./toaster";
+import { MAX_SUBMIT_BYTES, prepareUpload } from "./prepare-upload";
 
 export type ActionState = { ok: boolean; message?: string; error?: string; data?: Record<string, unknown> } | null;
 export type FormAction = (prev: ActionState, fd: FormData) => Promise<ActionState>;
 
-/** Bungkus server action agar pesan sukses tampil sebagai toast (dieksekusi sebelum UI di-refresh) */
+/**
+ * Bungkus server action: foto dikecilkan dulu di browser, lalu pesan sukses tampil sebagai toast
+ * (dieksekusi sebelum UI di-refresh)
+ */
 function withToast(action: FormAction, notify = true): FormAction {
   return async (prev, fd) => {
-    const res = await action(prev, fd);
+    const upload = await prepareUpload(fd);
+    if (upload.tooLarge) {
+      return { ok: false, error: `Total lampiran terlalu besar (maks ${MAX_SUBMIT_BYTES / 1024 / 1024} MB sekali simpan). Kurangi jumlah file lalu coba lagi.` };
+    }
+    const res = await action(prev, upload.fd);
     if (notify && res?.ok && res.message) toast(res.message);
     return res;
   };

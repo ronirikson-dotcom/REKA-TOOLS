@@ -30,7 +30,8 @@ export async function forgotPasswordAction(_: ActionState, fd: FormData): Promis
   try {
     const res = await requestPasswordReset(str(fd, "identifier"));
     if (res) {
-      const url = `${process.env.APP_URL ?? "http://localhost:3000"}/reset-password/${res.token}`;
+      const vercelUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+      const url = `${process.env.APP_URL ?? vercelUrl ?? "http://localhost:3000"}/reset-password/${res.token}`;
       // Integrasi email (SMTP/provider) dapat ditambahkan di sini. Sementara link dicatat di log server.
       console.info(`[password-reset] ${res.email}: ${url}`);
       if (process.env.NODE_ENV !== "production") {

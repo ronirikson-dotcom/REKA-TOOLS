@@ -124,6 +124,7 @@ src/
   server/auth/           password, session, context & scope cabang
   server/seed/           data master & transaksi demo
 drizzle/                 file migrasi SQL
+supabase/                SQL khusus Supabase (hardening schema wms, bucket Storage)
 tests/                   integration test alur & business rule
 ```
 
@@ -153,7 +154,7 @@ Respons sukses `{ "data": ... }`, error `{ "error": { "code", "message" } }` den
 
 Semua tabel aplikasi berada di schema PostgreSQL **`wms`** (bukan `public`), jadi bisa berbagi project Supabase dengan aplikasi lain tanpa bentrok. Schema `wms` tidak dibuka ke Data API: RLS aktif di semua tabel tanpa policy dan hak akses `anon` / `authenticated` dicabut (`supabase/hardening.sql`). Aplikasi terhubung langsung ke PostgreSQL sebagai role `postgres`, sehingga tidak terpengaruh.
 
-Status saat ini: project Supabase **Konsolidasi-Grup** sudah berisi schema `wms` (migrasi `0000_init` tercatat di `wms.__drizzle_migrations`), hardening, dan data demo yang sama dengan `npm run db:setup` (tanpa audit log & notifikasi). Akun demo di atas bisa langsung dipakai.
+Status saat ini: project Supabase **Konsolidasi-Grup** (region Singapore) sudah berisi schema `wms` (migrasi `0000_init` tercatat di `wms.__drizzle_migrations`), hardening, data demo yang sama dengan `npm run db:setup` (tanpa audit log & notifikasi), dan bucket Storage privat `wms-files` untuk foto/evidence. Akun demo di atas bisa langsung dipakai.
 
 Menghubungkan aplikasi:
 
@@ -166,14 +167,32 @@ Menghubungkan aplikasi:
    `DB_PREPARE` biarkan `false` untuk transaction pooler (tidak mendukung prepared statement); `true` hanya bila memakai session pooler / direct connection. Password database ada di Project Settings → Database (bisa di-reset di sana).
 3. `npm run db:migrate` aman dijalankan: migrasi yang sudah tercatat dilewati. **Jangan** jalankan `npm run db:reset` / `npm test` ke database Supabase — keduanya menghapus schema `wms`.
 
-Project Supabase baru: `npm run db:migrate` → `psql "$DATABASE_URL" -f supabase/hardening.sql` (atau tempel di SQL Editor) → `npm run db:seed -- --no-demo` untuk master data saja, atau `npm run db:seed` untuk data demo. Jalankan ulang `supabase/hardening.sql` setiap ada migrasi yang menambah tabel.
+Project Supabase baru: `npm run db:migrate` → `psql "$DATABASE_URL" -f supabase/hardening.sql` dan `-f supabase/storage.sql` (atau tempel di SQL Editor) → `npm run db:seed -- --no-demo` untuk master data saja, atau `npm run db:seed` untuk data demo. Jalankan ulang `supabase/hardening.sql` setiap ada migrasi yang menambah tabel.
 
-## Deploy
+## Deploy ke Vercel
 
-- **Database**: Supabase (lihat bagian di atas) atau PostgreSQL managed lain — `npm run db:migrate` lalu `npm run db:seed -- --no-demo`.
-- **Aplikasi**: Vercel atau server Node (`npm run build && npm start`). Set `DATABASE_URL`, `DB_PREPARE`, `APP_URL`, `STORAGE_DIR`.
-- **File foto/evidence**: saat ini disimpan di folder `STORAGE_DIR`. Untuk Vercel/serverless, ganti implementasi `src/server/storage.ts` ke object storage (Supabase Storage / S3); interface-nya sudah dipisahkan.
-- Backup otomatis harian + PITR mengikuti fasilitas database managed (SRS 4.12).
+Repo ini siap di-import langsung ke Vercel (framework Next.js terdeteksi otomatis; build/install command default). `vercel.json` menempatkan fungsi server di region **Singapore (`sin1`)**, dekat database Supabase.
+
+1. Vercel → **Add New → Project** → import repo GitHub ini (branch `main`).
+2. Sebelum klik Deploy, isi **Environment Variables**:
+
+   | Variabel | Nilai | Wajib |
+   |---|---|---|
+   | `DATABASE_URL` | Connection string **Transaction pooler** Supabase (lihat bagian di atas) | Ya |
+   | `DB_PREPARE` | `false` | Ya |
+   | `SUPABASE_URL` | `https://<project-ref>.supabase.co` (Project Settings → API) | Ya, untuk upload foto |
+   | `SUPABASE_SECRET_KEY` | Secret key `sb_secret_...` (Project Settings → API Keys). Key `service_role` lama juga bisa, dengan nama `SUPABASE_SERVICE_ROLE_KEY` | Ya, untuk upload foto |
+   | `SUPABASE_STORAGE_BUCKET` | `wms-files` (default, boleh tidak diisi) | Tidak |
+   | `APP_URL` | URL produksi, mis. `https://wms.domainanda.com` (default: domain produksi Vercel) | Tidak |
+
+   Secret key hanya dipakai di server dan tidak pernah dikirim ke browser — jangan beri prefix `NEXT_PUBLIC_`.
+3. Deploy, lalu login dengan akun demo. Setiap push ke `main` otomatis deploy ulang; branch lain mendapat preview deployment (memakai database yang sama bila env-nya juga diset untuk Preview).
+
+Catatan:
+- Foto check-in & evidence disimpan di bucket privat Supabase Storage dan hanya bisa dibuka lewat aplikasi (`/api/files/:id`, wajib login). Tanpa `SUPABASE_URL` + `SUPABASE_SECRET_KEY`, aplikasi menyimpan file di folder `STORAGE_DIR` — cocok untuk development, tidak untuk Vercel (filesystem read-only; upload akan ditolak dengan pesan jelas).
+- Body request Vercel maksimal 4,5 MB. Foto otomatis dikecilkan di browser (maks 1600 px, JPEG) sebelum dikirim; total lampiran per simpan dibatasi 4 MB.
+- Server Node biasa juga bisa: `npm run build && npm start` dengan env yang sama.
+- Backup otomatis harian + PITR mengikuti fasilitas Supabase / database managed (SRS 4.12).
 
 ## Batasan saat ini & tahap berikutnya
 
